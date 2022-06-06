@@ -5,6 +5,16 @@
 	typeof define === 'function' && define.amd ? define(['exports', 'three'], factory) :
 	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Geo = {}, global.THREE));
 })(this, (function (exports, three) { 'use strict';
+	const locationDisplay = (location) => {
+		switch (location) {
+			case MapNode.root: return 'root';
+			case MapNode.topLeft: return 'topLeft';
+			case MapNode.topRight: return 'topRight';
+			case MapNode.bottomLeft: return 'bottomLeft';
+			case MapNode.bottomRight: return 'bottomRight';
+			default: return String(location);
+		}
+	}
 
 	class MapProvider {
 	    constructor() {
@@ -42,7 +52,7 @@
 	    }
 	}
 
-	/*! *****************************************************************************
+	/******************************************************************************
 	Copyright (c) Microsoft Corporation.
 
 	Permission to use, copy, modify, and/or distribute this software for any
@@ -82,6 +92,7 @@
 	        this.setAttribute('position', new three.Float32BufferAttribute(vertices, 3));
 	        this.setAttribute('normal', new three.Float32BufferAttribute(normals, 3));
 	        this.setAttribute('uv', new three.Float32BufferAttribute(uvs, 2));
+			console.log('MapNodeGeometry constructor');
 	    }
 	    static buildPlane(width = 1.0, height = 1.0, widthSegments = 1.0, heightSegments = 1.0, indices, vertices, normals, uvs) {
 	        const widthHalf = width / 2;
@@ -210,6 +221,7 @@
 	        this.level = level;
 	        this.x = x;
 	        this.y = y;
+			this.name = `MapNode-Mesh?pos=(${x},${y})&location=${locationDisplay(location)}`;
 	        this.initialize();
 	    }
 	    initialize() { }
@@ -443,8 +455,49 @@
 	    }
 	}
 
+	const editLines = (code, editor) => {
+		const lines = code.split('\n');
+		editor(lines);
+		const result = lines.join('\n');
+		return result;
+	};
+
+	const makeMaterial = () => {
+		const phongMaterial = new three.MeshPhongMaterial({ wireframe: false, color: 0xffffff });
+		
+		phongMaterial.onBeforeCompile = shader => {
+			const varryingDeclaration = 'varying vec3 vWorldPosition;';
+			shader.vertexShader = editLines(shader.vertexShader, lines => {
+				lines.splice(0, 0, varryingDeclaration);
+				lines.splice(lines.length - 1, 0, `
+					vec4 worldPosition = vec4( transformed, 1.0 );
+					worldPosition = modelMatrix * worldPosition;
+					vWorldPosition = vec3(worldPosition);
+				`);
+			});
+			console.log(shader.vertexShader);
+
+			shader.fragmentShader = editLines(shader.fragmentShader, lines => {
+				lines.splice(0, 0, varryingDeclaration);
+
+				lines.splice(lines.length - 1, 0, `
+					bool isRed = vWorldPosition.x > 0.0;
+					if (isRed) {
+						gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+					}
+				`);
+			});
+		};
+
+		return phongMaterial;
+	};
+
 	class MapHeightNode extends MapNode {
-	    constructor(parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = new three.MeshPhongMaterial({ wireframe: false, color: 0xffffff })) {
+	    constructor(parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = makeMaterial()) {
+			// material.fragmentShader = 'xd';
+			// console.log('material.fragmentShader', material.fragmentShader);
+			// console.log('MapHeightNode constructor material', material);
+			material.name = `MapHeightNode-Material?pos=(${x},${y})&location=${locationDisplay(location)}`;
 	        super(parentNode, mapView, location, level, x, y, geometry, material);
 	        this.heightLoaded = false;
 	        this.textureLoaded = false;
@@ -460,6 +513,7 @@
 	        this.loadHeightGeometry();
 	    }
 	    loadTexture() {
+			// did load texture here
 	        return __awaiter(this, void 0, void 0, function* () {
 	            const texture = new three.Texture();
 	            texture.image = yield this.mapView.provider.fetchTile(this.level, this.x, this.y);
@@ -667,6 +721,7 @@
 	class MapHeightNodeShader extends MapHeightNode {
 	    constructor(parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0) {
 	        const material = MapHeightNodeShader.prepareMaterial(new three.MeshPhongMaterial({ map: MapHeightNodeShader.emptyTexture, color: 0xFFFFFF }));
+			console.log('make material');
 	        super(parentNode, mapView, location, level, x, y, MapHeightNodeShader.geometry, material);
 	        this.frustumCulled = false;
 	    }
@@ -676,6 +731,8 @@
 	            for (const i in material.userData) {
 	                shader.uniforms[i] = material.userData[i];
 	            }
+				// console.log('override shaders');
+				// shader.fragmentShader = '';
 	            shader.vertexShader =
 	                `
 			uniform sampler2D heightMap;
@@ -1211,7 +1268,7 @@
 
 	class MapView extends three.Mesh {
 	    constructor(root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
-	        super(undefined, new three.MeshBasicMaterial({ transparent: true, opacity: 0.0 }));
+	        super(undefined, new three.MeshBasicMaterial({ transparent: true, opacity: 0.0, name: 'MapView-Material' }));
 	        this.lod = null;
 	        this.provider = null;
 	        this.heightProvider = null;
@@ -1223,6 +1280,12 @@
 	        this.provider = provider;
 	        this.heightProvider = heightProvider;
 	        this.setRoot(root);
+
+			// setTimeout(() => {
+			// 	console.log('mapview root', this.root.geometry);
+			// 	const cloned = this.root.geometry.clone();
+			// 	console.log('cloned', cloned);
+			// }, 2000);
 	    }
 	    setRoot(root) {
 	        if (typeof root === 'number') {
@@ -1238,7 +1301,6 @@
 	        }
 	        this.root = root;
 	        if (this.root !== null) {
-	            console.log(this.root);
 	            this.geometry = this.root.constructor.baseGeometry;
 	            this.scale.copy(this.root.constructor.baseScale);
 	            this.root.mapView = this;
@@ -1577,7 +1639,7 @@
 	                image.src = MapBoxProvider.ADDRESS + 'styles/v1/' + this.style + '/tiles/' + zoom + '/' + x + '/' + y + (this.useHDPI ? '@2x?access_token=' : '?access_token=') + this.apiToken;
 	            }
 	            else {
-	                image.src = MapBoxProvider.ADDRESS + 'v4/' + this.mapId + '/' + zoom + '/' + x + '/' + y + (this.useHDPI ? '@2x.' : '.') + this.format + '?access_token=' + this.apiToken;
+	                image.src = MapBoxProvider.ADDRESS + 'v4/' + this.mapId + '/' + zoom + '/' + x + '/' + y + (this.useHDPI ? '@2x.' : '.') + this.format + '?access_token=' + 'pk.eyJ1IjoibWFjaWVqbWNoIiwiYSI6ImNsM2NuZXczYzAwOTEzY3Boa2VkcW00bDMifQ.xtMJMLBGeZuWorFpBSEFIA';
 	            }
 	        });
 	    }

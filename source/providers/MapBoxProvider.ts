@@ -145,7 +145,7 @@ export class MapBoxProvider extends MapProvider
 			}
 			else 
 			{
-				image.src = MapBoxProvider.ADDRESS + 'v4/' + this.mapId + '/' + zoom + '/' + x + '/' + y + (this.useHDPI ? '@2x.' : '.') + this.format + '?access_token=' + this.apiToken;
+				image.src = MapBoxProvider.ADDRESS + 'v4/' + this.mapId + '/' + zoom + '/' + x + '/' + y + (this.useHDPI ? '@2x.' : '.') + this.format + '?access_token=' + 'pk.eyJ1IjoibWFjaWVqbWNoIiwiYSI6ImNsM2NuZXczYzAwOTEzY3Boa2VkcW00bDMifQ.xtMJMLBGeZuWorFpBSEFIA';
 			}
 		});
 	}

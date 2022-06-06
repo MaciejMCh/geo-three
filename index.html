@@ -58,6 +58,8 @@
 		scene.add(sky);
 		var providers = createProviders();
 
+		document.getElementById("mapbox_api").value = "xddddd";
+
 		function createProviders() {
 			var DEV_MAPBOX_API_KEY = document.getElementById("mapbox_api").value;
 			var DEV_HEREMAPS_APP_ID = document.getElementById("heremaps_id").value;;
@@ -135,8 +137,17 @@
 		{
 			if(map !== undefined)
 			{
+				console.log(
+					'select',
+					modes[mode.selectedIndex][1],
+					providers[providerColor.selectedIndex][1],
+				);
 				scene.remove(map);
-				map = new Geo.MapView(modes[mode.selectedIndex][1], providers[providerColor.selectedIndex][1], providers[providerHeight.selectedIndex][1]);
+				map = new Geo.MapView(
+					modes[mode.selectedIndex][1],
+					providers[providerColor.selectedIndex][1],
+					providers[providerHeight.selectedIndex][1],
+				);
 				scene.add(map);
 			}
 		};
@@ -183,7 +194,14 @@
 		providerColor.selectedIndex = 12;
 		providerHeight.selectedIndex = 15;
 
-		var map = new Geo.MapView(modes[mode.selectedIndex][1], providers[providerColor.selectedIndex][1], providers[providerHeight.selectedIndex][1]);
+		const mmode = 202;
+		const pprovider = new Geo.MapBoxProvider('DEV_MAPBOX_API_KEY', "mapbox.satellite", Geo.MapBoxProvider.MAP_ID, "jpg70", false);
+		const pprovider2 = new Geo.MapBoxProvider('DEV_MAPBOX_API_KEY', "mapbox.terrain-rgb", Geo.MapBoxProvider.MAP_ID, "pngraw");
+		var map = new Geo.MapView(
+			mmode,
+			pprovider,
+			pprovider2,
+		);
 		scene.add(map);
 		map.updateMatrixWorld(true);
 		
@@ -199,7 +217,9 @@
 		
 		var coords = Geo.UnitsUtils.datumsToSpherical(40.940119, -8.535589);
 		controls.target.set(coords.x, 0, -coords.y);
-		camera.position.set(0, 1000, 0);
+		camera.position.set(6489277.559042043, 1704.6393884570148, -2707131.1766189244);
+		camera.rotation.set(-2.480965147957906, 0.2521332731657641, 2.950101949355631);
+		camera.updateProjectionMatrix();
 
 		scene.add(new THREE.AmbientLight(0x777777));
 
