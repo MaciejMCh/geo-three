@@ -484,7 +484,7 @@
 	                `
 					vec4 circleColor(Circle circle, vec3 worldPosition, float depth) {
 						float dist = distance(worldPosition, circle.worldOrigin);
-						float otherLimit = circle.radius - (depth * 0.01);
+						float otherLimit = circle.radius - (depth * 0.004);
 						bool isRed = dist < circle.radius && dist > otherLimit;
 						if (isRed) {
 							return vec4(1.0, 0.0, 0.0, 1.0);
