@@ -452,25 +452,34 @@
 	const makeMaterial = () => {
 	    const phongMaterial = new three.MeshPhongMaterial({ wireframe: false, color: 0xffffff });
 	    phongMaterial.onBeforeCompile = shader => {
-	        const varryingDeclaration = 'varying vec3 vWorldPosition;';
+	        const varryingDeclarations = [
+	            'varying vec3 vWorldPosition;',
+	        ];
 	        shader.vertexShader = editLines(shader.vertexShader, lines => {
-	            lines.splice(0, 0, varryingDeclaration);
+	            lines.splice(0, 0, [
+	                ...varryingDeclarations,
+	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
 				vec4 worldPosition = vec4(transformed, 1.0);
 				worldPosition = modelMatrix * worldPosition;
 				vWorldPosition = vec3(worldPosition);
 			`);
 	        });
-	        console.log(shader.vertexShader);
 	        shader.fragmentShader = editLines(shader.fragmentShader, lines => {
-	            lines.splice(0, 0, varryingDeclaration);
+	            lines.splice(0, 0, [
+	                ...varryingDeclarations,
+	                'uniform vec3 origin;',
+	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
-				bool isRed = vWorldPosition.x > 0.0;
+				float dist = distance(vWorldPosition, origin);
+				bool isRed = dist < 1000.0;
 				if (isRed) {
-					gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+					gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 				}
 			`);
 	        });
+	        const originUniform = new three.Uniform(new three.Vector3(6486614.558396748, 0, -2705261.510353672));
+	        shader.uniforms['origin'] = originUniform;
 	    };
 	    return phongMaterial;
 	};

@@ -94,6 +94,8 @@ export class MapView extends Mesh
 		this.heightProvider = heightProvider;
 
 		this.setRoot(root);
+
+		
 	}
 
 	/**
