@@ -443,6 +443,11 @@
 	    }
 	}
 
+	const constants = {
+	    circles: {
+	        limit: 2,
+	    },
+	};
 	const editLines = (code, editor) => {
 	    const lines = code.split('\n');
 	    editor(lines);
@@ -474,22 +479,29 @@
 						float radius;
 					};
 				`,
-	                'uniform Circle circle;',
+	                `uniform Circle circles[${constants.circles.limit}];`,
+	                'uniform int circlesCount;'
 	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
-				float dist = distance(vWorldPosition, circle.worldOrigin);
-				bool isRed = dist < circle.radius;
+				float dist = distance(vWorldPosition, circles[0].worldOrigin);
+				bool isRed = dist < circles[0].radius;
 				if (isRed) {
 					gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 				}
 			`);
 	        });
-	        shader.uniforms['circle'] = {
-	            value: {
-	                worldOrigin: new three.Vector3(6486614.558396748, 0, -2705261.510353672),
-	                radius: 1000,
-	            },
+	        const value1 = {
+	            worldOrigin: new three.Vector3(6486614.558396748, 0, -2705261.510353672),
+	            radius: 1000,
 	        };
+	        const zeroValue = {
+	            worldOrigin: new three.Vector3(),
+	            radius: 0,
+	        };
+	        shader.uniforms['circles'] = {
+	            value: Array(constants.circles.limit).fill(zeroValue),
+	        };
+	        shader.uniforms['circles'].value[0] = value1;
 	    };
 	    return phongMaterial;
 	};
