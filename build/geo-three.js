@@ -494,8 +494,10 @@
 	                'uniform int circlesCount;'
 	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
-				vec4 circleColor = circleColor(circles[0], vWorldPosition);
-				gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
+				for (int i = 0; i <= circlesCount; i++) {
+					vec4 circleColor = circleColor(circles[i], vWorldPosition);
+					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
+				}
 			`);
 	        });
 	        const zeroValue = {
@@ -509,6 +511,11 @@
 	            worldOrigin: new three.Vector3(6486614.558396748, 0, -2705261.510353672),
 	            radius: 1000,
 	        };
+	        shader.uniforms['circles'].value[1] = {
+	            worldOrigin: new three.Vector3(6484614.558396748, 0, -2705261.510353672),
+	            radius: 500,
+	        };
+	        shader.uniforms['circlesCount'] = { value: 2 };
 	    };
 	    return phongMaterial;
 	};
