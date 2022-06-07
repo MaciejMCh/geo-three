@@ -445,7 +445,7 @@
 
 	const constants = {
 	    circles: {
-	        limit: 2,
+	        limit: 20,
 	    },
 	};
 	const editLines = (code, editor) => {
@@ -479,21 +479,25 @@
 						float radius;
 					};
 				`,
+	                `
+					vec4 circleColor(Circle circle, vec3 worldPosition) {
+						float dist = distance(worldPosition, circle.worldOrigin);
+						bool isRed = dist < circle.radius;
+						if (isRed) {
+							return vec4(1.0, 0.0, 0.0, 1.0);
+						} else {
+							return vec4(0.0, 0.0, 0.0, 0.0);
+						}
+					}
+				`,
 	                `uniform Circle circles[${constants.circles.limit}];`,
 	                'uniform int circlesCount;'
 	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
-				float dist = distance(vWorldPosition, circles[0].worldOrigin);
-				bool isRed = dist < circles[0].radius;
-				if (isRed) {
-					gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-				}
+				vec4 circleColor = circleColor(circles[0], vWorldPosition);
+				gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 			`);
 	        });
-	        const value1 = {
-	            worldOrigin: new three.Vector3(6486614.558396748, 0, -2705261.510353672),
-	            radius: 1000,
-	        };
 	        const zeroValue = {
 	            worldOrigin: new three.Vector3(),
 	            radius: 0,
@@ -501,7 +505,10 @@
 	        shader.uniforms['circles'] = {
 	            value: Array(constants.circles.limit).fill(zeroValue),
 	        };
-	        shader.uniforms['circles'].value[0] = value1;
+	        shader.uniforms['circles'].value[0] = {
+	            worldOrigin: new three.Vector3(6486614.558396748, 0, -2705261.510353672),
+	            radius: 1000,
+	        };
 	    };
 	    return phongMaterial;
 	};
