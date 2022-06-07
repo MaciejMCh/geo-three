@@ -215,11 +215,8 @@
 		controls.minDistance = 1e1;
 		controls.zoomSpeed = 2.0;
 		
-		var coords = Geo.UnitsUtils.datumsToSpherical(40.940119, -8.535589);
+		var coords = Geo.UnitsUtils.datumsToSpherical(23.6015386, 58.2899376);
 		controls.target.set(coords.x, 0, -coords.y);
-		camera.position.set(6489277.559042043, 1704.6393884570148, -2707131.1766189244);
-		camera.rotation.set(-2.480965147957906, 0.2521332731657641, 2.950101949355631);
-		camera.updateProjectionMatrix();
 
 		scene.add(new THREE.AmbientLight(0x777777));
 
