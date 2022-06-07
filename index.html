@@ -228,7 +228,7 @@
 		{
 			var width = window.innerWidth;
 			var height = window.innerHeight;
-			renderer.setSize(width, height);
+			renderer.setSize(width * window.devicePixelRatio, height * window.devicePixelRatio, false);
 			camera.aspect = width / height;
 			camera.updateProjectionMatrix();
 		}

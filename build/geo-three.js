@@ -459,6 +459,7 @@
 	    phongMaterial.onBeforeCompile = shader => {
 	        const varryingDeclarations = [
 	            'varying vec3 vWorldPosition;',
+	            'varying float vDepth;',
 	        ];
 	        shader.vertexShader = editLines(shader.vertexShader, lines => {
 	            lines.splice(0, 0, [
@@ -468,6 +469,7 @@
 				vec4 worldPosition = vec4(transformed, 1.0);
 				worldPosition = modelMatrix * worldPosition;
 				vWorldPosition = vec3(worldPosition);
+				vDepth = gl_Position.w;
 			`);
 	        });
 	        shader.fragmentShader = editLines(shader.fragmentShader, lines => {
@@ -480,9 +482,10 @@
 					};
 				`,
 	                `
-					vec4 circleColor(Circle circle, vec3 worldPosition) {
+					vec4 circleColor(Circle circle, vec3 worldPosition, float depth) {
 						float dist = distance(worldPosition, circle.worldOrigin);
-						bool isRed = dist < circle.radius;
+						float otherLimit = circle.radius - (depth * 0.01);
+						bool isRed = dist < circle.radius && dist > otherLimit;
 						if (isRed) {
 							return vec4(1.0, 0.0, 0.0, 1.0);
 						} else {
@@ -495,7 +498,7 @@
 	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
 				for (int i = 0; i <= circlesCount; i++) {
-					vec4 circleColor = circleColor(circles[i], vWorldPosition);
+					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
 			`);
