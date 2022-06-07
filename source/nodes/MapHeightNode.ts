@@ -35,20 +35,30 @@ const makeMaterial = () => {
 		shader.fragmentShader = editLines(shader.fragmentShader, lines => {
 			lines.splice(0, 0, [
 				...varryingDeclarations,
-				'uniform vec3 origin;',
+				`
+					struct Circle {
+						vec3 worldOrigin;
+						float radius;
+					};
+				`,
+				'uniform Circle circle;',
 			].join('\n'));
 
 			lines.splice(lines.length - 1, 0, `
-				float dist = distance(vWorldPosition, origin);
-				bool isRed = dist < 1000.0;
+				float dist = distance(vWorldPosition, circle.worldOrigin);
+				bool isRed = dist < circle.radius;
 				if (isRed) {
 					gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 				}
 			`);
 		});
 
-		const originUniform = new Uniform(new Vector3(6486614.558396748, 0, -2705261.510353672));
-		shader.uniforms['origin'] = originUniform;
+		shader.uniforms['circle'] = {
+			value: {
+				worldOrigin: new Vector3(6486614.558396748, 0, -2705261.510353672),
+				radius: 1000,
+			 },
+		};
 	};
 
 	return phongMaterial;
