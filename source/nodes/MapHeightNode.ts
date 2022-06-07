@@ -7,6 +7,43 @@ import {MapView} from '../MapView';
 import {MapNodeHeightGeometry} from '../geometries/MapNodeHeightGeometry';
 import {CanvasUtils} from '../utils/CanvasUtils';
 
+const editLines = (code, editor) => {
+	const lines = code.split('\n');
+	editor(lines);
+	const result = lines.join('\n');
+	return result;
+};
+
+const makeMaterial = () => {
+	const phongMaterial = new MeshPhongMaterial({ wireframe: false, color: 0xffffff });
+	
+	phongMaterial.onBeforeCompile = shader => {
+		const varryingDeclaration = 'varying vec3 vWorldPosition;';
+		shader.vertexShader = editLines(shader.vertexShader, lines => {
+			lines.splice(0, 0, varryingDeclaration);
+			lines.splice(lines.length - 1, 0, `
+				vec4 worldPosition = vec4(transformed, 1.0);
+				worldPosition = modelMatrix * worldPosition;
+				vWorldPosition = vec3(worldPosition);
+			`);
+		});
+		console.log(shader.vertexShader);
+
+		shader.fragmentShader = editLines(shader.fragmentShader, lines => {
+			lines.splice(0, 0, varryingDeclaration);
+
+			lines.splice(lines.length - 1, 0, `
+				bool isRed = vWorldPosition.x > 0.0;
+				if (isRed) {
+					gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+				}
+			`);
+		});
+	};
+
+	return phongMaterial;
+};
+
 /**
  * Represents a height map tile node that can be subdivided into other height nodes.
  *
@@ -62,7 +99,7 @@ export class MapHeightNode extends MapNode
 	 * @param material - Material used to render this height node.
 	 * @param geometry - Geometry used to render this height node.
 	 */
-	public constructor(parentNode: MapHeightNode = null, mapView: MapView = null, location: number = MapNode.root, level: number = 0, x: number = 0, y: number = 0, geometry: BufferGeometry = MapHeightNode.geometry, material: Material = new MeshPhongMaterial({wireframe: false, color: 0xffffff})) 
+	public constructor(parentNode: MapHeightNode = null, mapView: MapView = null, location: number = MapNode.root, level: number = 0, x: number = 0, y: number = 0, geometry: BufferGeometry = MapHeightNode.geometry, material: Material = makeMaterial()) 
 	{
 		super(parentNode, mapView, location, level, x, y, geometry, material);
 
