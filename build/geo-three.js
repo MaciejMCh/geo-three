@@ -477,6 +477,17 @@
 	                },
 	            },
 	        };
+	        this.remove = {
+	            circle: (identity) => {
+	                const circleToRemove = this.circlesByIds[identity.raw];
+	                const circles = this.uniforms['circles'].value;
+	                const indexToRemove = circles.findIndex(x => x === circleToRemove);
+	                circles.splice(indexToRemove, 1);
+	                circles.push(this.makeBlankCircle());
+	                this.circlesCount -= 1;
+	                this.uniforms['circlesCount'].value = this.circlesCount;
+	            },
+	        };
 	        this.addShader = (shader) => {
 	            if (!this.uniforms) {
 	                const uniforms = shader.uniforms;
@@ -490,13 +501,14 @@
 	        this.setup = (uniforms) => {
 	            this.setupCircles(uniforms);
 	        };
+	        this.makeBlankCircle = () => ({
+	            worldOrigin: new three.Vector3(),
+	            radius: 0,
+	        });
 	        this.setupCircles = (uniforms) => {
 	            const circles = [];
 	            for (let index = 0; index < constants.circles.limit; index++) {
-	                circles.push({
-	                    worldOrigin: new three.Vector3(),
-	                    radius: 0,
-	                });
+	                circles.push(this.makeBlankCircle());
 	            }
 	            uniforms['circles'] = new three.Uniform(circles);
 	            uniforms['circlesCount'] = new three.Uniform(0);
@@ -1379,14 +1391,14 @@
 	            this.root.mapView = this;
 	            this.add(this.root);
 	            setTimeout(() => {
-	                const identity = rootUniforms.create.circle();
-	                rootUniforms.update.circle.radius(identity, 10000);
-	                rootUniforms.update.circle.geoposition(identity, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+	                const identity1 = rootUniforms.create.circle();
+	                const identity2 = rootUniforms.create.circle();
+	                rootUniforms.update.circle.radius(identity1, 10000);
+	                rootUniforms.update.circle.geoposition(identity1, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+	                rootUniforms.update.circle.radius(identity2, 5000);
+	                rootUniforms.update.circle.geoposition(identity2, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
 	                setTimeout(() => {
-	                    rootUniforms.update.circle.radius(identity, 11000);
-	                    setTimeout(() => {
-	                        rootUniforms.update.circle.radius(identity, 12000);
-	                    }, 1000);
+	                    rootUniforms.remove.circle(identity2);
 	                }, 1000);
 	            }, 3000);
 	        }

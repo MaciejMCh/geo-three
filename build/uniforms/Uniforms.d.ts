@@ -16,9 +16,13 @@ export declare class ShaderUniforms {
             radius: (identity: DrawableIdentity, radius: number) => void;
         };
     };
+    remove: {
+        circle: (identity: DrawableIdentity) => void;
+    };
     addShader: (shader: Shader) => void;
     createCircle: () => void;
     private setup;
+    private makeBlankCircle;
     private setupCircles;
 }
 export declare const rootUniforms: ShaderUniforms;

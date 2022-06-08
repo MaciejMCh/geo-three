@@ -155,14 +155,14 @@ export class MapView extends Mesh
 			this.add(this.root);
 
 			setTimeout(() => {
-				const identity = rootUniforms.create.circle();
-				rootUniforms.update.circle.radius(identity, 10000);
-				rootUniforms.update.circle.geoposition(identity, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+				const identity1 = rootUniforms.create.circle();
+				const identity2 = rootUniforms.create.circle();
+				rootUniforms.update.circle.radius(identity1, 10000);
+				rootUniforms.update.circle.geoposition(identity1, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+				rootUniforms.update.circle.radius(identity2, 5000);
+				rootUniforms.update.circle.geoposition(identity2, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
 				setTimeout(() => {
-					rootUniforms.update.circle.radius(identity, 11000);
-					setTimeout(() => {
-						rootUniforms.update.circle.radius(identity, 12000);
-					}, 1000);
+					rootUniforms.remove.circle(identity2); // remove smaller;
 				}, 1000);
 			}, 3000);
 		}
