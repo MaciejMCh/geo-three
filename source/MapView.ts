@@ -9,6 +9,7 @@ import {LODRaycast} from './lod/LODRaycast';
 import {MapProvider} from './providers/MapProvider';
 import {LODControl} from './lod/LODControl';
 import {MapMartiniHeightNode} from './nodes/MapMartiniHeightNode';
+import { rootUniforms } from './uniforms';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -95,7 +96,7 @@ export class MapView extends Mesh
 
 		this.setRoot(root);
 
-		
+
 	}
 
 	/**
@@ -154,6 +155,12 @@ export class MapView extends Mesh
 
 			this.root.mapView = this;
 			this.add(this.root);
+
+			setTimeout(() => {
+				rootUniforms.create.circle();
+				// rootUniforms.create.circle();
+				// rootUniforms.update.circle.radius(0, 10000);
+			}, 3000);
 		}
 	}
 

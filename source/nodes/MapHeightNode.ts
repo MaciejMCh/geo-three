@@ -6,12 +6,8 @@ import {UnitsUtils} from '../utils/UnitsUtils';
 import {MapView} from '../MapView';
 import {MapNodeHeightGeometry} from '../geometries/MapNodeHeightGeometry';
 import {CanvasUtils} from '../utils/CanvasUtils';
-
-const constants = {
-	circles: {
-		limit: 20,
-	},
-};
+import { CompoundShaders, rootUniforms, ShaderUniforms } from '../uniforms';
+import { constants } from '../uniforms/constants';
 
 const editLines = (code: string, editor: (lines: string[]) => void) => {
 	const lines = code.split('\n');
@@ -62,7 +58,7 @@ const makeMaterial = () => {
 					}
 				`,
 				`uniform Circle circles[${constants.circles.limit}];`,
-				'uniform int circlesCount;'
+				'uniform int circlesCount;',
 			].join('\n'));
 
 			lines.splice(lines.length - 1, 0, `
@@ -73,26 +69,41 @@ const makeMaterial = () => {
 			`);
 		});
 
-		const zeroValue = {
-			worldOrigin: new Vector3(),
-			radius: 0,
-		};
+		const shaderUniforms = new ShaderUniforms(shader);
+		rootUniforms.addUniforms(shaderUniforms);
 
-		shader.uniforms['circles'] = {
-			value: Array(constants.circles.limit).fill(zeroValue),
-		};
+		// shaderUniforms.create.circle();
+		// shaderUniforms.update.circle.radius(0, 10000);
 
-		shader.uniforms['circles'].value[0] = {
-			worldOrigin: new Vector3(6486614.558396748, 0, -2705261.510353672),
-			radius: 1000,
-		};
+		// setTimeout(() => {
+		// 	shaderUniforms.update.circle.radius(0, 2000);
+		// }, 3000);
+		
+		// shaderUniforms.create.circle();
 
-		shader.uniforms['circles'].value[1] = {
-			worldOrigin: new Vector3(6484614.558396748, 0, -2705261.510353672),
-			radius: 500,
-		};
+		// rootUniforms.addUniforms(new ShaderUniforms(shader));
 
-		shader.uniforms['circlesCount'] = { value: 2 };
+		// const zeroValue = {
+		// 	worldOrigin: new Vector3(),
+		// 	radius: 0,
+		// };
+
+		// shader.uniforms['circles'] = {
+		// 	value: Array(constants.circles.limit).fill(zeroValue),
+		// };
+
+		// shader.uniforms['circles'].value[0] = {
+		// 	worldOrigin: new Vector3(6486614.558396748, 0, -2705261.510353672),
+		// 	radius: 1000,
+		// };
+
+		// shader.uniforms['circles'].value[1] = {
+		// 	worldOrigin: new Vector3(6484614.558396748, 0, -2705261.510353672),
+		// 	radius: 500,
+		// };
+
+		// shader.uniforms['circlesCount'] = { value: 2 };
+		// console.log('make shaders');
 	};
 
 	return phongMaterial;

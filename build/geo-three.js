@@ -448,6 +448,76 @@
 	        limit: 20,
 	    },
 	};
+
+	class ShaderUniforms {
+	    constructor(shader) {
+	        this.shader = shader;
+	        this.circlesCount = 0;
+	        console.log('create single shader');
+	        const circles = [];
+	        for (let index = 0; index < constants.circles.limit; index++) {
+	            circles.push({
+	                worldOrigin: new three.Vector3(),
+	                radius: 0,
+	            });
+	        }
+	        shader.uniforms['circles'] = new three.Uniform(circles);
+	        shader.uniforms['circlesCount'] = new three.Uniform(0);
+	        this.create = {
+	            circle: () => {
+	                console.log('create single circle');
+	                this.shader.uniforms['circles'].value[this.circlesCount]['radius'] = 500;
+	                this.shader.uniforms['circles'].value[this.circlesCount]['worldOrigin'] = new three.Vector3(6484614.558396748, 0, -2705261.510353672);
+	                this.circlesCount += 1;
+	                shader.uniforms['circlesCount'].value = this.circlesCount;
+	            },
+	        };
+	        this.update = {
+	            circle: {
+	                geoposition: (index, geoposition) => {
+	                },
+	                radius: (index, radius) => {
+	                    this.shader.uniforms['circles'].value[index]['radius'] = radius;
+	                },
+	            },
+	        };
+	    }
+	}
+	class CompoundShaders {
+	    constructor() {
+	        this.children = [];
+	        this.addUniforms = (uniforms) => {
+	            if (this.children.length > 0) {
+	                const first = this.children[0];
+	                uniforms.shader.uniforms = first.shader.uniforms;
+	            }
+	            this.children.push(uniforms);
+	        };
+	        this.create = {
+	            circle: () => {
+	                this.children.forEach(uniforms => {
+	                    uniforms.create.circle();
+	                });
+	            },
+	        };
+	        this.update = {
+	            circle: {
+	                geoposition: (index, geoposition) => {
+	                    this.children.forEach(uniforms => {
+	                        uniforms.update.circle.geoposition(index, geoposition);
+	                    });
+	                },
+	                radius: (index, radius) => {
+	                    this.children.forEach(uniforms => {
+	                        uniforms.update.circle.radius(index, radius);
+	                    });
+	                },
+	            },
+	        };
+	    }
+	}
+	const rootUniforms = new CompoundShaders();
+
 	const editLines = (code, editor) => {
 	    const lines = code.split('\n');
 	    editor(lines);
@@ -494,7 +564,7 @@
 					}
 				`,
 	                `uniform Circle circles[${constants.circles.limit}];`,
-	                'uniform int circlesCount;'
+	                'uniform int circlesCount;',
 	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
 				for (int i = 0; i <= circlesCount; i++) {
@@ -503,22 +573,8 @@
 				}
 			`);
 	        });
-	        const zeroValue = {
-	            worldOrigin: new three.Vector3(),
-	            radius: 0,
-	        };
-	        shader.uniforms['circles'] = {
-	            value: Array(constants.circles.limit).fill(zeroValue),
-	        };
-	        shader.uniforms['circles'].value[0] = {
-	            worldOrigin: new three.Vector3(6486614.558396748, 0, -2705261.510353672),
-	            radius: 1000,
-	        };
-	        shader.uniforms['circles'].value[1] = {
-	            worldOrigin: new three.Vector3(6484614.558396748, 0, -2705261.510353672),
-	            radius: 500,
-	        };
-	        shader.uniforms['circlesCount'] = { value: 2 };
+	        const shaderUniforms = new ShaderUniforms(shader);
+	        rootUniforms.addUniforms(shaderUniforms);
 	    };
 	    return phongMaterial;
 	};
@@ -1322,6 +1378,9 @@
 	            this.scale.copy(this.root.constructor.baseScale);
 	            this.root.mapView = this;
 	            this.add(this.root);
+	            setTimeout(() => {
+	                rootUniforms.create.circle();
+	            }, 3000);
 	        }
 	    }
 	    setProvider(provider) {
