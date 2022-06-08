@@ -6,7 +6,7 @@ import {UnitsUtils} from '../utils/UnitsUtils';
 import {MapView} from '../MapView';
 import {MapNodeHeightGeometry} from '../geometries/MapNodeHeightGeometry';
 import {CanvasUtils} from '../utils/CanvasUtils';
-import { CompoundShaders, rootUniforms, ShaderUniforms } from '../uniforms';
+import { rootUniforms } from '../uniforms';
 import { constants } from '../uniforms/constants';
 
 const editLines = (code: string, editor: (lines: string[]) => void) => {
@@ -69,40 +69,7 @@ const makeMaterial = () => {
 			`);
 		});
 
-		rootUniforms.addUniforms(new ShaderUniforms(shader));
-
-		// shaderUniforms.create.circle();
-		// shaderUniforms.update.circle.radius(0, 10000);
-
-		// setTimeout(() => {
-		// 	shaderUniforms.update.circle.radius(0, 2000);
-		// }, 3000);
-		
-		// shaderUniforms.create.circle();
-
-		// rootUniforms.addUniforms(new ShaderUniforms(shader));
-
-		// const zeroValue = {
-		// 	worldOrigin: new Vector3(),
-		// 	radius: 0,
-		// };
-
-		// shader.uniforms['circles'] = {
-		// 	value: Array(constants.circles.limit).fill(zeroValue),
-		// };
-
-		// shader.uniforms['circles'].value[0] = {
-		// 	worldOrigin: new Vector3(6486614.558396748, 0, -2705261.510353672),
-		// 	radius: 1000,
-		// };
-
-		// shader.uniforms['circles'].value[1] = {
-		// 	worldOrigin: new Vector3(6484614.558396748, 0, -2705261.510353672),
-		// 	radius: 500,
-		// };
-
-		// shader.uniforms['circlesCount'] = { value: 2 };
-		// console.log('make shaders');
+		rootUniforms.addShader(shader);
 	};
 
 	return phongMaterial;

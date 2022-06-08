@@ -4,44 +4,21 @@ export declare type Geoposition = {
     latitude: number;
     altitude: number;
 };
-export interface Uniforms {
-    create: {
-        circle: () => void;
-    };
-    update: {
-        circle: {
-            geoposition: (index: number, geoposition: Geoposition) => void;
-            radius: (index: number, radius: number) => void;
-        };
-    };
-}
-export declare class ShaderUniforms implements Uniforms {
-    shader: Shader;
+export declare class ShaderUniforms {
     private circlesCount;
-    create: {
-        circle: () => void;
-    };
-    update: {
-        circle: {
-            geoposition: (index: number, geoposition: Geoposition) => void;
-            radius: (index: number, radius: number) => void;
-        };
-    };
-    constructor(shader: Shader);
-}
-export declare class CompoundShaders implements Uniforms {
     private uniforms;
-    private children;
-    private circlesCount;
-    addUniforms: (uniforms: Uniforms) => void;
     create: {
         circle: () => void;
     };
     update: {
         circle: {
-            geoposition: (index: number, geoposition: Geoposition) => void;
+            geoposition: (index: number, geoposition: number) => void;
             radius: (index: number, radius: number) => void;
         };
     };
+    addShader: (shader: Shader) => void;
+    createCircle: () => void;
+    private setup;
+    private setupCircles;
 }
-export declare const rootUniforms: CompoundShaders;
+export declare const rootUniforms: ShaderUniforms;

@@ -158,8 +158,7 @@ export class MapView extends Mesh
 
 			setTimeout(() => {
 				rootUniforms.create.circle();
-				// rootUniforms.create.circle();
-				// rootUniforms.update.circle.radius(0, 10000);
+				rootUniforms.update.circle.radius(0, 10000);
 			}, 3000);
 		}
 	}
