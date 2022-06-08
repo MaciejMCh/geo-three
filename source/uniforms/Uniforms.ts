@@ -1,4 +1,4 @@
-import { Shader, Uniform, Vector3 } from 'three';
+import { IUniform, Shader, Uniform, Vector3 } from 'three';
 import { constants } from './constants';
 
 export type Geoposition = {
@@ -64,35 +64,47 @@ export class ShaderUniforms implements Uniforms {
 }
 
 export class CompoundShaders implements Uniforms {
+    private uniforms!: { [uniform: string]: IUniform<any> };
+
     private children: Uniforms[] = [];
 
+    private circlesCount = 0;
+
     addUniforms = (uniforms: Uniforms) => {
-        if (this.children.length > 0) {
-            const first = (this.children[0] as ShaderUniforms);
-            (uniforms as ShaderUniforms).shader.uniforms = first.shader.uniforms;
+        if (!this.uniforms &&  uniforms instanceof ShaderUniforms) {
+            this.uniforms = uniforms.shader.uniforms;
+        }
+
+        if (uniforms instanceof ShaderUniforms) {
+            uniforms.shader.uniforms = this.uniforms;
         }
         this.children.push(uniforms);
     };
 
     create = {
         circle: () => {
-            this.children.forEach(uniforms => {
-                uniforms.create.circle();
-            });
+            console.log('create single circle');
+            this.uniforms['circles'].value[this.circlesCount]['radius'] = 500;
+            this.uniforms['circles'].value[this.circlesCount]['worldOrigin'] = new Vector3(6484614.558396748, 0, -2705261.510353672);
+            this.circlesCount += 1;
+            this.uniforms['circlesCount'].value = this.circlesCount;
+            // this.children.forEach(uniforms => {
+            //     uniforms.create.circle();
+            // });
         },
     };
 
     update = {
         circle: {
             geoposition: (index: number, geoposition: Geoposition) => {
-                this.children.forEach(uniforms => {
-                    uniforms.update.circle.geoposition(index, geoposition);
-                });
+                // this.children.forEach(uniforms => {
+                //     uniforms.update.circle.geoposition(index, geoposition);
+                // });
             },
             radius: (index: number, radius: number) => {
-                this.children.forEach(uniforms => {
-                    uniforms.update.circle.radius(index, radius);
-                });
+                // this.children.forEach(uniforms => {
+                //     uniforms.update.circle.radius(index, radius);
+                // });
             },
         },
     };

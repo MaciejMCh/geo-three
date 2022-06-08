@@ -69,8 +69,7 @@ const makeMaterial = () => {
 			`);
 		});
 
-		const shaderUniforms = new ShaderUniforms(shader);
-		rootUniforms.addUniforms(shaderUniforms);
+		rootUniforms.addUniforms(new ShaderUniforms(shader));
 
 		// shaderUniforms.create.circle();
 		// shaderUniforms.update.circle.radius(0, 10000);

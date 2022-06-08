@@ -30,7 +30,9 @@ export declare class ShaderUniforms implements Uniforms {
     constructor(shader: Shader);
 }
 export declare class CompoundShaders implements Uniforms {
+    private uniforms;
     private children;
+    private circlesCount;
     addUniforms: (uniforms: Uniforms) => void;
     create: {
         circle: () => void;
