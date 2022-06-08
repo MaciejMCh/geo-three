@@ -462,8 +462,6 @@
 	            circle: () => {
 	                const identity = new DrawableIdentity();
 	                this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
-	                this.uniforms['circles'].value[this.circlesCount]['radius'] = 500;
-	                this.uniforms['circles'].value[this.circlesCount]['worldOrigin'] = new three.Vector3(6484614.558396748, 0, -2705261.510353672);
 	                this.circlesCount += 1;
 	                this.uniforms['circlesCount'].value = this.circlesCount;
 	                return identity;
@@ -471,7 +469,8 @@
 	        };
 	        this.update = {
 	            circle: {
-	                geoposition: (id, geoposition) => {
+	                geoposition: (identity, geoposition) => {
+	                    this.circlesByIds[identity.raw]['worldOrigin'] = geoposition.worldPosition;
 	                },
 	                radius: (identity, radius) => {
 	                    this.circlesByIds[identity.raw]['radius'] = radius;
@@ -1331,6 +1330,21 @@
 	MapMartiniHeightNode.geometry = new MapNodeGeometry(1, 1, 1, 1);
 	MapMartiniHeightNode.tileSize = 256;
 
+	class Geoposition {
+	    constructor(args) {
+	        this.longitude = args.longitude;
+	        this.latitude = args.latitude;
+	        this.altitude = args.altitude;
+	    }
+	    get worldPosition() {
+	        if (!this._worldPosition) {
+	            var coords = UnitsUtils.datumsToSpherical(this.latitude, this.longitude);
+	            this._worldPosition = new three.Vector3(coords.x, 0, -coords.y);
+	        }
+	        return this._worldPosition;
+	    }
+	}
+
 	class MapView extends three.Mesh {
 	    constructor(root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
 	        super(undefined, new three.MeshBasicMaterial({ transparent: true, opacity: 0.0 }));
@@ -1360,7 +1374,6 @@
 	        }
 	        this.root = root;
 	        if (this.root !== null) {
-	            console.log(this.root);
 	            this.geometry = this.root.constructor.baseGeometry;
 	            this.scale.copy(this.root.constructor.baseScale);
 	            this.root.mapView = this;
@@ -1368,6 +1381,13 @@
 	            setTimeout(() => {
 	                const identity = rootUniforms.create.circle();
 	                rootUniforms.update.circle.radius(identity, 10000);
+	                rootUniforms.update.circle.geoposition(identity, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+	                setTimeout(() => {
+	                    rootUniforms.update.circle.radius(identity, 11000);
+	                    setTimeout(() => {
+	                        rootUniforms.update.circle.radius(identity, 12000);
+	                    }, 1000);
+	                }, 1000);
 	            }, 3000);
 	        }
 	    }

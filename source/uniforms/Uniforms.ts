@@ -1,11 +1,6 @@
 import { IUniform, Shader, Uniform, Vector3, MathUtils } from 'three';
+import { Geoposition } from '../nodes/primitive';
 import { constants } from './constants';
-
-export type Geoposition = {
-    longitude: number;
-    latitude: number;
-    altitude: number;
-};
 
 type Uniforms =  { [uniform: string]: IUniform<any> };
 
@@ -24,8 +19,6 @@ export class ShaderUniforms {
         circle: () => {
             const identity = new DrawableIdentity();
             this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
-            this.uniforms['circles'].value[this.circlesCount]['radius'] = 500;
-            this.uniforms['circles'].value[this.circlesCount]['worldOrigin'] = new Vector3(6484614.558396748, 0, -2705261.510353672);
             this.circlesCount += 1;
             this.uniforms['circlesCount'].value = this.circlesCount;
             return identity;
@@ -34,8 +27,8 @@ export class ShaderUniforms {
 
     update = {
         circle: {
-            geoposition: (id: DrawableIdentity, geoposition: number) => {
-                // this.shader.uniforms['circles'].value[index] = new Vector3()
+            geoposition: (identity: DrawableIdentity, geoposition: Geoposition) => {
+                this.circlesByIds[identity.raw]['worldOrigin'] = geoposition.worldPosition;
             },
             radius: (identity: DrawableIdentity, radius: number) => {
                 this.circlesByIds[identity.raw]['radius'] = radius;

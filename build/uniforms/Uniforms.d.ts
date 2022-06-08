@@ -1,9 +1,5 @@
 import { Shader } from 'three';
-export declare type Geoposition = {
-    longitude: number;
-    latitude: number;
-    altitude: number;
-};
+import { Geoposition } from '../nodes/primitive';
 export declare class DrawableIdentity {
     readonly raw: string;
 }
@@ -16,7 +12,7 @@ export declare class ShaderUniforms {
     };
     update: {
         circle: {
-            geoposition: (id: DrawableIdentity, geoposition: number) => void;
+            geoposition: (identity: DrawableIdentity, geoposition: Geoposition) => void;
             radius: (identity: DrawableIdentity, radius: number) => void;
         };
     };

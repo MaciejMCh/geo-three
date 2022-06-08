@@ -10,6 +10,7 @@ import {MapProvider} from './providers/MapProvider';
 import {LODControl} from './lod/LODControl';
 import {MapMartiniHeightNode} from './nodes/MapMartiniHeightNode';
 import { rootUniforms } from './uniforms';
+import { Geoposition } from './nodes/primitive';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -144,9 +145,6 @@ export class MapView extends Mesh
 		// Initialize root node
 		if (this.root !== null) 
 		{
-			// TODO <REMOVE THIS>
-			console.log(this.root);
-
 			// @ts-ignore
 			this.geometry = this.root.constructor.baseGeometry;
 
@@ -159,6 +157,13 @@ export class MapView extends Mesh
 			setTimeout(() => {
 				const identity = rootUniforms.create.circle();
 				rootUniforms.update.circle.radius(identity, 10000);
+				rootUniforms.update.circle.geoposition(identity, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+				setTimeout(() => {
+					rootUniforms.update.circle.radius(identity, 11000);
+					setTimeout(() => {
+						rootUniforms.update.circle.radius(identity, 12000);
+					}, 1000);
+				}, 1000);
 			}, 3000);
 		}
 	}
