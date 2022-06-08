@@ -9,8 +9,8 @@ import {LODRaycast} from './lod/LODRaycast';
 import {MapProvider} from './providers/MapProvider';
 import {LODControl} from './lod/LODControl';
 import {MapMartiniHeightNode} from './nodes/MapMartiniHeightNode';
-import { rootUniforms } from './uniforms';
 import { Geoposition } from './nodes/primitive';
+import { ShaderUniforms } from './uniforms';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -79,6 +79,8 @@ export class MapView extends Mesh
 	 */
 	public root: MapNode = null;
 
+	public readonly uniforms = new ShaderUniforms();
+
 	/**
 	 * Constructor for the map view objects.
 	 *
@@ -129,7 +131,7 @@ export class MapView extends Mesh
 			const rootConstructor = MapView.mapModes.get(root);
 
 			// @ts-ignore
-			root = new rootConstructor(null, this);
+			root = new rootConstructor(this.uniforms, null, this);
 		}
 
 		// Remove old root
@@ -155,14 +157,14 @@ export class MapView extends Mesh
 			this.add(this.root);
 
 			setTimeout(() => {
-				const identity1 = rootUniforms.create.circle();
-				const identity2 = rootUniforms.create.circle();
-				rootUniforms.update.circle.radius(identity1, 10000);
-				rootUniforms.update.circle.geoposition(identity1, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
-				rootUniforms.update.circle.radius(identity2, 5000);
-				rootUniforms.update.circle.geoposition(identity2, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+				const identity1 = this.uniforms.create.circle();
+				const identity2 = this.uniforms.create.circle();
+				this.uniforms.update.circle.radius(identity1, 10000);
+				this.uniforms.update.circle.geoposition(identity1, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+				this.uniforms.update.circle.radius(identity2, 5000);
+				this.uniforms.update.circle.geoposition(identity2, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
 				setTimeout(() => {
-					rootUniforms.remove.circle(identity2); // remove smaller;
+					this.uniforms.remove.circle(identity2); // remove smaller;
 				}, 1000);
 			}, 3000);
 		}

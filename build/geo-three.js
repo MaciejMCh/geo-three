@@ -449,81 +449,13 @@
 	    },
 	};
 
-	class DrawableIdentity {
-	    constructor() {
-	        this.raw = three.MathUtils.generateUUID();
-	    }
-	}
-	class ShaderUniforms {
-	    constructor() {
-	        this.circlesCount = 0;
-	        this.circlesByIds = {};
-	        this.create = {
-	            circle: () => {
-	                const identity = new DrawableIdentity();
-	                this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
-	                this.circlesCount += 1;
-	                this.uniforms['circlesCount'].value = this.circlesCount;
-	                return identity;
-	            },
-	        };
-	        this.update = {
-	            circle: {
-	                geoposition: (identity, geoposition) => {
-	                    this.circlesByIds[identity.raw]['worldOrigin'] = geoposition.worldPosition;
-	                },
-	                radius: (identity, radius) => {
-	                    this.circlesByIds[identity.raw]['radius'] = radius;
-	                },
-	            },
-	        };
-	        this.remove = {
-	            circle: (identity) => {
-	                const circleToRemove = this.circlesByIds[identity.raw];
-	                const circles = this.uniforms['circles'].value;
-	                const indexToRemove = circles.findIndex(x => x === circleToRemove);
-	                circles.splice(indexToRemove, 1);
-	                circles.push(this.makeBlankCircle());
-	                this.circlesCount -= 1;
-	                this.uniforms['circlesCount'].value = this.circlesCount;
-	            },
-	        };
-	        this.addShader = (shader) => {
-	            if (!this.uniforms) {
-	                const uniforms = shader.uniforms;
-	                this.setup(uniforms);
-	                this.uniforms = uniforms;
-	            }
-	            shader.uniforms = this.uniforms;
-	        };
-	        this.createCircle = () => {
-	        };
-	        this.setup = (uniforms) => {
-	            this.setupCircles(uniforms);
-	        };
-	        this.makeBlankCircle = () => ({
-	            worldOrigin: new three.Vector3(),
-	            radius: 0,
-	        });
-	        this.setupCircles = (uniforms) => {
-	            const circles = [];
-	            for (let index = 0; index < constants.circles.limit; index++) {
-	                circles.push(this.makeBlankCircle());
-	            }
-	            uniforms['circles'] = new three.Uniform(circles);
-	            uniforms['circlesCount'] = new three.Uniform(0);
-	        };
-	    }
-	}
-	const rootUniforms = new ShaderUniforms();
-
 	const editLines = (code, editor) => {
 	    const lines = code.split('\n');
 	    editor(lines);
 	    const result = lines.join('\n');
 	    return result;
 	};
-	const makeMaterial = () => {
+	const makeMaterial = (uniforms) => {
 	    const phongMaterial = new three.MeshPhongMaterial({ wireframe: false, color: 0xffffff });
 	    phongMaterial.onBeforeCompile = shader => {
 	        const varryingDeclarations = [
@@ -572,17 +504,21 @@
 				}
 			`);
 	        });
-	        rootUniforms.addShader(shader);
+	        uniforms.addShader(shader);
 	    };
 	    return phongMaterial;
 	};
 	class MapHeightNode extends MapNode {
-	    constructor(parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = makeMaterial()) {
+	    constructor(uniforms, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = makeMaterial(uniforms)) {
 	        super(parentNode, mapView, location, level, x, y, geometry, material);
+	        this.uniforms = uniforms;
 	        this.heightLoaded = false;
 	        this.textureLoaded = false;
 	        this.geometrySize = 16;
 	        this.geometryNormals = false;
+	        if (!uniforms) {
+	            console.trace();
+	        }
 	        this.isMesh = true;
 	        this.visible = false;
 	        this.matrixAutoUpdate = false;
@@ -619,25 +555,25 @@
 	        const Constructor = Object.getPrototypeOf(this).constructor;
 	        const x = this.x * 2;
 	        const y = this.y * 2;
-	        let node = new Constructor(this, this.mapView, MapNode.topLeft, level, x, y);
+	        let node = new Constructor(this.uniforms, this, this.mapView, MapNode.topLeft, level, x, y);
 	        node.scale.set(0.5, 1.0, 0.5);
 	        node.position.set(-0.25, 0, -0.25);
 	        this.add(node);
 	        node.updateMatrix();
 	        node.updateMatrixWorld(true);
-	        node = new Constructor(this, this.mapView, MapNode.topRight, level, x + 1, y);
+	        node = new Constructor(this.uniforms, this, this.mapView, MapNode.topRight, level, x + 1, y);
 	        node.scale.set(0.5, 1.0, 0.5);
 	        node.position.set(0.25, 0, -0.25);
 	        this.add(node);
 	        node.updateMatrix();
 	        node.updateMatrixWorld(true);
-	        node = new Constructor(this, this.mapView, MapNode.bottomLeft, level, x, y + 1);
+	        node = new Constructor(this.uniforms, this, this.mapView, MapNode.bottomLeft, level, x, y + 1);
 	        node.scale.set(0.5, 1.0, 0.5);
 	        node.position.set(-0.25, 0, 0.25);
 	        this.add(node);
 	        node.updateMatrix();
 	        node.updateMatrixWorld(true);
-	        node = new Constructor(this, this.mapView, MapNode.bottomRight, level, x + 1, y + 1);
+	        node = new Constructor(this.uniforms, this, this.mapView, MapNode.bottomRight, level, x + 1, y + 1);
 	        node.scale.set(0.5, 1.0, 0.5);
 	        node.position.set(0.25, 0, 0.25);
 	        this.add(node);
@@ -798,9 +734,9 @@
 	MapSphereNode.segments = 80;
 
 	class MapHeightNodeShader extends MapHeightNode {
-	    constructor(parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0) {
+	    constructor(uniforms, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0) {
 	        const material = MapHeightNodeShader.prepareMaterial(new three.MeshPhongMaterial({ map: MapHeightNodeShader.emptyTexture, color: 0xFFFFFF }));
-	        super(parentNode, mapView, location, level, x, y, MapHeightNodeShader.geometry, material);
+	        super(uniforms, parentNode, mapView, location, level, x, y, MapHeightNodeShader.geometry, material);
 	        this.frustumCulled = false;
 	    }
 	    static prepareMaterial(material) {
@@ -1151,8 +1087,8 @@
 	}
 
 	class MapMartiniHeightNode extends MapHeightNode {
-	    constructor(parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, { elevationDecoder = null, meshMaxError = 10, exageration = 1 } = {}) {
-	        super(parentNode, mapView, location, level, x, y, MapMartiniHeightNode.geometry, MapMartiniHeightNode.prepareMaterial(new three.MeshPhongMaterial({
+	    constructor(uniforms, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, { elevationDecoder = null, meshMaxError = 10, exageration = 1 } = {}) {
+	        super(uniforms, parentNode, mapView, location, level, x, y, MapMartiniHeightNode.geometry, MapMartiniHeightNode.prepareMaterial(new three.MeshPhongMaterial({
 	            map: MapMartiniHeightNode.emptyTexture,
 	            color: 0xFFFFFF,
 	            side: three.DoubleSide
@@ -1357,6 +1293,73 @@
 	    }
 	}
 
+	class DrawableIdentity {
+	    constructor() {
+	        this.raw = three.MathUtils.generateUUID();
+	    }
+	}
+	class ShaderUniforms {
+	    constructor() {
+	        this.circlesCount = 0;
+	        this.circlesByIds = {};
+	        this.create = {
+	            circle: () => {
+	                const identity = new DrawableIdentity();
+	                this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
+	                this.circlesCount += 1;
+	                this.uniforms['circlesCount'].value = this.circlesCount;
+	                return identity;
+	            },
+	        };
+	        this.update = {
+	            circle: {
+	                geoposition: (identity, geoposition) => {
+	                    this.circlesByIds[identity.raw]['worldOrigin'] = geoposition.worldPosition;
+	                },
+	                radius: (identity, radius) => {
+	                    this.circlesByIds[identity.raw]['radius'] = radius;
+	                },
+	            },
+	        };
+	        this.remove = {
+	            circle: (identity) => {
+	                const circleToRemove = this.circlesByIds[identity.raw];
+	                const circles = this.uniforms['circles'].value;
+	                const indexToRemove = circles.findIndex(x => x === circleToRemove);
+	                circles.splice(indexToRemove, 1);
+	                circles.push(this.makeBlankCircle());
+	                this.circlesCount -= 1;
+	                this.uniforms['circlesCount'].value = this.circlesCount;
+	            },
+	        };
+	        this.addShader = (shader) => {
+	            if (!this.uniforms) {
+	                const uniforms = shader.uniforms;
+	                this.setup(uniforms);
+	                this.uniforms = uniforms;
+	            }
+	            shader.uniforms = this.uniforms;
+	        };
+	        this.createCircle = () => {
+	        };
+	        this.setup = (uniforms) => {
+	            this.setupCircles(uniforms);
+	        };
+	        this.makeBlankCircle = () => ({
+	            worldOrigin: new three.Vector3(),
+	            radius: 0,
+	        });
+	        this.setupCircles = (uniforms) => {
+	            const circles = [];
+	            for (let index = 0; index < constants.circles.limit; index++) {
+	                circles.push(this.makeBlankCircle());
+	            }
+	            uniforms['circles'] = new three.Uniform(circles);
+	            uniforms['circlesCount'] = new three.Uniform(0);
+	        };
+	    }
+	}
+
 	class MapView extends three.Mesh {
 	    constructor(root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
 	        super(undefined, new three.MeshBasicMaterial({ transparent: true, opacity: 0.0 }));
@@ -1364,6 +1367,7 @@
 	        this.provider = null;
 	        this.heightProvider = null;
 	        this.root = null;
+	        this.uniforms = new ShaderUniforms();
 	        this.onBeforeRender = (renderer, scene, camera, geometry, material, group) => {
 	            this.lod.updateLOD(this, camera, renderer, scene);
 	        };
@@ -1378,7 +1382,7 @@
 	                throw new Error('Map mode ' + root + ' does is not registered.');
 	            }
 	            const rootConstructor = MapView.mapModes.get(root);
-	            root = new rootConstructor(null, this);
+	            root = new rootConstructor(this.uniforms, null, this);
 	        }
 	        if (this.root !== null) {
 	            this.remove(this.root);
@@ -1391,14 +1395,14 @@
 	            this.root.mapView = this;
 	            this.add(this.root);
 	            setTimeout(() => {
-	                const identity1 = rootUniforms.create.circle();
-	                const identity2 = rootUniforms.create.circle();
-	                rootUniforms.update.circle.radius(identity1, 10000);
-	                rootUniforms.update.circle.geoposition(identity1, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
-	                rootUniforms.update.circle.radius(identity2, 5000);
-	                rootUniforms.update.circle.geoposition(identity2, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+	                const identity1 = this.uniforms.create.circle();
+	                const identity2 = this.uniforms.create.circle();
+	                this.uniforms.update.circle.radius(identity1, 10000);
+	                this.uniforms.update.circle.geoposition(identity1, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
+	                this.uniforms.update.circle.radius(identity2, 5000);
+	                this.uniforms.update.circle.geoposition(identity2, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
 	                setTimeout(() => {
-	                    rootUniforms.remove.circle(identity2);
+	                    this.uniforms.remove.circle(identity2);
 	                }, 1000);
 	            }, 3000);
 	        }

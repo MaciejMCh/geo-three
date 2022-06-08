@@ -2,6 +2,7 @@ import { Material, MeshPhongMaterial, Texture } from 'three';
 import { MapNodeGeometry } from '../geometries/MapNodeGeometry';
 import { MapView } from '../MapView';
 import { MapHeightNode } from './MapHeightNode';
+import { ShaderUniforms } from '../uniforms';
 export declare class MapMartiniHeightNode extends MapHeightNode {
     static geometrySize: number;
     static emptyTexture: Texture;
@@ -11,7 +12,7 @@ export declare class MapMartiniHeightNode extends MapHeightNode {
     exageration: number;
     meshMaxError: number | Function;
     material: MeshPhongMaterial;
-    constructor(parentNode?: MapHeightNode, mapView?: MapView, location?: number, level?: number, x?: number, y?: number, { elevationDecoder, meshMaxError, exageration }?: {
+    constructor(uniforms: ShaderUniforms, parentNode?: MapHeightNode, mapView?: MapView, location?: number, level?: number, x?: number, y?: number, { elevationDecoder, meshMaxError, exageration }?: {
         elevationDecoder?: any;
         meshMaxError?: number;
         exageration?: number;

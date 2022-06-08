@@ -2,6 +2,7 @@ import { BufferGeometry, Camera, Group, Material, Mesh, Raycaster, Scene, WebGLR
 import { MapNode } from './nodes/MapNode';
 import { MapProvider } from './providers/MapProvider';
 import { LODControl } from './lod/LODControl';
+import { ShaderUniforms } from './uniforms';
 export declare class MapView extends Mesh {
     static PLANAR: number;
     static SPHERICAL: number;
@@ -13,6 +14,7 @@ export declare class MapView extends Mesh {
     provider: MapProvider;
     heightProvider: MapProvider;
     root: MapNode;
+    readonly uniforms: ShaderUniforms;
     constructor(root?: (number | MapNode), provider?: MapProvider, heightProvider?: MapProvider);
     onBeforeRender: (renderer: WebGLRenderer, scene: Scene, camera: Camera, geometry: BufferGeometry, material: Material, group: Group) => void;
     setRoot(root: (MapNode | number)): void;

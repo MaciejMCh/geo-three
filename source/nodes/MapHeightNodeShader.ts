@@ -5,6 +5,7 @@ import {MapPlaneNode} from './MapPlaneNode';
 import {UnitsUtils} from '../utils/UnitsUtils';
 import {MapNode} from './MapNode';
 import {MapView} from '../MapView';
+import { ShaderUniforms } from '../uniforms';
 
 /**
  * Map height node that uses GPU height calculation to generate the deformed plane mesh.
@@ -20,11 +21,11 @@ import {MapView} from '../MapView';
  */
 export class MapHeightNodeShader extends MapHeightNode 
 {
-	public constructor(parentNode: MapHeightNode = null, mapView: MapView = null, location: number = MapNode.root, level: number = 0, x: number = 0, y: number = 0) 
+	public constructor(uniforms: ShaderUniforms, parentNode: MapHeightNode = null, mapView: MapView = null, location: number = MapNode.root, level: number = 0, x: number = 0, y: number = 0) 
 	{
 		const material: Material = MapHeightNodeShader.prepareMaterial(new MeshPhongMaterial({map: MapHeightNodeShader.emptyTexture, color: 0xFFFFFF}));
 
-		super(parentNode, mapView, location, level, x, y, MapHeightNodeShader.geometry, material);
+		super(uniforms, parentNode, mapView, location, level, x, y, MapHeightNodeShader.geometry, material);
 
 		this.frustumCulled = false;
 	}

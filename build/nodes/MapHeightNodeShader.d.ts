@@ -1,8 +1,9 @@
 import { BufferGeometry, Intersection, Material, Raycaster, Texture, Vector3 } from 'three';
 import { MapHeightNode } from './MapHeightNode';
 import { MapView } from '../MapView';
+import { ShaderUniforms } from '../uniforms';
 export declare class MapHeightNodeShader extends MapHeightNode {
-    constructor(parentNode?: MapHeightNode, mapView?: MapView, location?: number, level?: number, x?: number, y?: number);
+    constructor(uniforms: ShaderUniforms, parentNode?: MapHeightNode, mapView?: MapView, location?: number, level?: number, x?: number, y?: number);
     static emptyTexture: Texture;
     static geometrySize: number;
     static geometry: BufferGeometry;

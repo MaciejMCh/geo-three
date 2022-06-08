@@ -5,6 +5,7 @@ import {Martini} from './Martini';
 import {MapHeightNode} from './MapHeightNode';
 import {MapNode} from './MapNode.js';
 import {CanvasUtils} from '../utils/CanvasUtils';
+import { ShaderUniforms } from '../uniforms';
 
 /** 
  * Represents a height map tile node using the RTIN method from the paper "Right Triangulated Irregular Networks".
@@ -63,9 +64,9 @@ export class MapMartiniHeightNode extends MapHeightNode
 
 	public material: MeshPhongMaterial;
 
-	public constructor(parentNode: MapHeightNode = null, mapView: MapView = null, location: number = MapNode.root, level: number = 0, x: number = 0, y: number = 0, {elevationDecoder = null, meshMaxError = 10, exageration = 1} = {})
+	public constructor(uniforms: ShaderUniforms, parentNode: MapHeightNode = null, mapView: MapView = null, location: number = MapNode.root, level: number = 0, x: number = 0, y: number = 0, {elevationDecoder = null, meshMaxError = 10, exageration = 1} = {})
 	{
-		super(parentNode, mapView, location, level, x, y, MapMartiniHeightNode.geometry, MapMartiniHeightNode.prepareMaterial(new MeshPhongMaterial({
+		super(uniforms, parentNode, mapView, location, level, x, y, MapMartiniHeightNode.geometry, MapMartiniHeightNode.prepareMaterial(new MeshPhongMaterial({
 			map: MapMartiniHeightNode.emptyTexture,
 			color: 0xFFFFFF,
 			side: DoubleSide

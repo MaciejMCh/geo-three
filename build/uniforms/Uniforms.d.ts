@@ -25,4 +25,3 @@ export declare class ShaderUniforms {
     private makeBlankCircle;
     private setupCircles;
 }
-export declare const rootUniforms: ShaderUniforms;

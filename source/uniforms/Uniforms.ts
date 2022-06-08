@@ -81,5 +81,3 @@ export class ShaderUniforms {
         uniforms['circlesCount'] = new Uniform(0);
     };
 }
-
-export const rootUniforms = new ShaderUniforms();
