@@ -1,4 +1,4 @@
-import { IUniform, Shader, Uniform, Vector3 } from 'three';
+import { IUniform, Shader, Uniform, Vector3, MathUtils } from 'three';
 import { constants } from './constants';
 
 export type Geoposition = {
@@ -9,28 +9,36 @@ export type Geoposition = {
 
 type Uniforms =  { [uniform: string]: IUniform<any> };
 
+export class DrawableIdentity {
+    readonly raw = MathUtils.generateUUID();
+}
+
 export class ShaderUniforms {
     private circlesCount = 0;
 
     private uniforms!: Uniforms;
 
+    private circlesByIds: Record<string, object> = {};
+
     create = {
         circle: () => {
-            console.log('create single circle');
+            const identity = new DrawableIdentity();
+            this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
             this.uniforms['circles'].value[this.circlesCount]['radius'] = 500;
             this.uniforms['circles'].value[this.circlesCount]['worldOrigin'] = new Vector3(6484614.558396748, 0, -2705261.510353672);
             this.circlesCount += 1;
             this.uniforms['circlesCount'].value = this.circlesCount;
+            return identity;
         },
     };
 
     update = {
         circle: {
-            geoposition: (index: number, geoposition: number) => {
+            geoposition: (id: DrawableIdentity, geoposition: number) => {
                 // this.shader.uniforms['circles'].value[index] = new Vector3()
             },
-            radius: (index: number, radius: number) => {
-                this.uniforms['circles'].value[index]['radius'] = radius;
+            radius: (identity: DrawableIdentity, radius: number) => {
+                this.circlesByIds[identity.raw]['radius'] = radius;
             },
         },
     };

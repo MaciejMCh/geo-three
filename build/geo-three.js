@@ -449,24 +449,32 @@
 	    },
 	};
 
+	class DrawableIdentity {
+	    constructor() {
+	        this.raw = three.MathUtils.generateUUID();
+	    }
+	}
 	class ShaderUniforms {
 	    constructor() {
 	        this.circlesCount = 0;
+	        this.circlesByIds = {};
 	        this.create = {
 	            circle: () => {
-	                console.log('create single circle');
+	                const identity = new DrawableIdentity();
+	                this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
 	                this.uniforms['circles'].value[this.circlesCount]['radius'] = 500;
 	                this.uniforms['circles'].value[this.circlesCount]['worldOrigin'] = new three.Vector3(6484614.558396748, 0, -2705261.510353672);
 	                this.circlesCount += 1;
 	                this.uniforms['circlesCount'].value = this.circlesCount;
+	                return identity;
 	            },
 	        };
 	        this.update = {
 	            circle: {
-	                geoposition: (index, geoposition) => {
+	                geoposition: (id, geoposition) => {
 	                },
-	                radius: (index, radius) => {
-	                    this.uniforms['circles'].value[index]['radius'] = radius;
+	                radius: (identity, radius) => {
+	                    this.circlesByIds[identity.raw]['radius'] = radius;
 	                },
 	            },
 	        };
@@ -1358,8 +1366,8 @@
 	            this.root.mapView = this;
 	            this.add(this.root);
 	            setTimeout(() => {
-	                rootUniforms.create.circle();
-	                rootUniforms.update.circle.radius(0, 10000);
+	                const identity = rootUniforms.create.circle();
+	                rootUniforms.update.circle.radius(identity, 10000);
 	            }, 3000);
 	        }
 	    }

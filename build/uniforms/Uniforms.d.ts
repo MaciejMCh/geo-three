@@ -4,16 +4,20 @@ export declare type Geoposition = {
     latitude: number;
     altitude: number;
 };
+export declare class DrawableIdentity {
+    readonly raw: string;
+}
 export declare class ShaderUniforms {
     private circlesCount;
     private uniforms;
+    private circlesByIds;
     create: {
-        circle: () => void;
+        circle: () => DrawableIdentity;
     };
     update: {
         circle: {
-            geoposition: (index: number, geoposition: number) => void;
-            radius: (index: number, radius: number) => void;
+            geoposition: (id: DrawableIdentity, geoposition: number) => void;
+            radius: (identity: DrawableIdentity, radius: number) => void;
         };
     };
     addShader: (shader: Shader) => void;

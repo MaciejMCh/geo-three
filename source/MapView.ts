@@ -157,8 +157,8 @@ export class MapView extends Mesh
 			this.add(this.root);
 
 			setTimeout(() => {
-				rootUniforms.create.circle();
-				rootUniforms.update.circle.radius(0, 10000);
+				const identity = rootUniforms.create.circle();
+				rootUniforms.update.circle.radius(identity, 10000);
 			}, 3000);
 		}
 	}
