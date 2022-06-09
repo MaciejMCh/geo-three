@@ -560,20 +560,23 @@
 				`,
 	                `uniform Circle circles[${constants.circles.limit}];`,
 	                'uniform int circlesCount;',
+	                'uniform sampler2D tSec;',
 	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
 				for (int i = 0; i <= circlesCount; i++) {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
+				gl_FragColor = mix(gl_FragColor, texture2D(tSec, vUv), 0.5);
 			`);
 	        });
 	        uniforms.addShader(shader);
+	        shader.uniforms['tSec'] = new THREE.Uniform(getMap(renderer));
 	    };
 	    return phongMaterial;
 	};
 	class MapHeightNode extends MapNode {
-	    constructor(uniforms, renderer, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = makeMaterial(uniforms)) {
+	    constructor(uniforms, renderer, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = makeMaterial(uniforms, renderer)) {
 	        super(parentNode, mapView, location, level, x, y, geometry, material);
 	        this.uniforms = uniforms;
 	        this.renderer = renderer;
@@ -606,7 +609,7 @@
 	            texture.magFilter = THREE.LinearFilter;
 	            texture.minFilter = THREE.LinearFilter;
 	            texture.needsUpdate = true;
-	            this.material.map = getMap(this.renderer);
+	            this.material.map = texture;
 	            this.material.needsUpdate = true;
 	            this.textureLoaded = true;
 	            this.nodeReady();

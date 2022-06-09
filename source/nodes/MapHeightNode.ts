@@ -1,4 +1,4 @@
-import {LinearFilter, Material, MeshPhongMaterial, BufferGeometry, RGBAFormat, Texture, Vector3, Raycaster, Intersection, WebGLRenderer} from 'three';
+import {LinearFilter, Material, MeshPhongMaterial, BufferGeometry, RGBAFormat, Texture, Vector3, Raycaster, Intersection, WebGLRenderer, Uniform} from 'three';
 import {MapNodeGeometry} from '../geometries/MapNodeGeometry';
 import {MapNode} from './MapNode';
 import {MapPlaneNode} from './MapPlaneNode';
@@ -71,6 +71,7 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 				`,
 				`uniform Circle circles[${constants.circles.limit}];`,
 				'uniform int circlesCount;',
+				'uniform sampler2D tSec;',
 			].join('\n'));
 
 			lines.splice(lines.length - 1, 0, `
@@ -78,10 +79,12 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
+				gl_FragColor = mix(gl_FragColor, texture2D(tSec, vUv), 0.5);
 			`);
 		});
 
 		uniforms.addShader(shader);
+		shader.uniforms['tSec'] = new Uniform(getMap(renderer));
 	};
 
 	return phongMaterial;
@@ -194,7 +197,7 @@ export class MapHeightNode extends MapNode
 		texture.needsUpdate = true;
 
 		// @ts-ignore
-		this.material.map = getMap(this.renderer);
+		this.material.map = texture;
 		// @ts-ignore
 		this.material.needsUpdate = true;
 
