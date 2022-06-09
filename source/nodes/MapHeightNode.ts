@@ -10,6 +10,16 @@ import { constants } from '../uniforms/constants';
 import { ShaderUniforms } from '../uniforms';
 import { xd } from '../deferredRendering/deferredRendering';
 
+var xdMap!: Texture;
+
+const getMap = (renderer: WebGLRenderer) => {
+	if (!xdMap) {
+		xdMap = xd(renderer).boxMaterial.map;
+	}
+
+	return xdMap;
+}
+
 const editLines = (code: string, editor: (lines: string[]) => void) => {
 	const lines = code.split('\n');
 	editor(lines);
@@ -18,7 +28,7 @@ const editLines = (code: string, editor: (lines: string[]) => void) => {
 };
 
 const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
-	return xd(renderer).boxMaterial;
+	// return xd(renderer).boxMaterial;
 	const phongMaterial = new MeshPhongMaterial({ wireframe: false, color: 0xffffff });
 	
 	phongMaterial.onBeforeCompile = shader => {
@@ -184,9 +194,9 @@ export class MapHeightNode extends MapNode
 		texture.needsUpdate = true;
 
 		// @ts-ignore
-		// this.material.map = texture;
+		this.material.map = getMap(this.renderer);
 		// @ts-ignore
-		// this.material.needsUpdate = true;
+		this.material.needsUpdate = true;
 
 		this.textureLoaded = true;
 		this.nodeReady();

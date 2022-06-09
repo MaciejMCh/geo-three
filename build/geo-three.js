@@ -506,11 +506,74 @@
 	    return { boxMaterial };
 	};
 
+	var xdMap;
+	const getMap = (renderer) => {
+	    if (!xdMap) {
+	        xdMap = xd(renderer).boxMaterial.map;
+	    }
+	    return xdMap;
+	};
+	const editLines = (code, editor) => {
+	    const lines = code.split('\n');
+	    editor(lines);
+	    const result = lines.join('\n');
+	    return result;
+	};
 	const makeMaterial = (uniforms, renderer) => {
-	    return xd(renderer).boxMaterial;
+	    const phongMaterial = new THREE.MeshPhongMaterial({ wireframe: false, color: 0xffffff });
+	    phongMaterial.onBeforeCompile = shader => {
+	        const varryingDeclarations = [
+	            'varying vec3 vWorldPosition;',
+	            'varying float vDepth;',
+	        ];
+	        shader.vertexShader = editLines(shader.vertexShader, lines => {
+	            lines.splice(0, 0, [
+	                ...varryingDeclarations,
+	            ].join('\n'));
+	            lines.splice(lines.length - 1, 0, `
+				vec4 worldPosition = vec4(transformed, 1.0);
+				worldPosition = modelMatrix * worldPosition;
+				vWorldPosition = vec3(worldPosition);
+				vDepth = gl_Position.w;
+			`);
+	        });
+	        shader.fragmentShader = editLines(shader.fragmentShader, lines => {
+	            lines.splice(0, 0, [
+	                ...varryingDeclarations,
+	                `
+					struct Circle {
+						vec3 worldOrigin;
+						float radius;
+					};
+				`,
+	                `
+					vec4 circleColor(Circle circle, vec3 worldPosition, float depth) {
+						float dist = distance(worldPosition, circle.worldOrigin);
+						float otherLimit = circle.radius - (depth * 0.004);
+						bool isRed = dist < circle.radius && dist > otherLimit;
+						if (isRed) {
+							return vec4(1.0, 0.0, 0.0, 1.0);
+						} else {
+							return vec4(0.0, 0.0, 0.0, 0.0);
+						}
+					}
+				`,
+	                `uniform Circle circles[${constants.circles.limit}];`,
+	                'uniform int circlesCount;',
+	            ].join('\n'));
+	            lines.splice(lines.length - 1, 0, `
+				for (int i = 0; i <= circlesCount; i++) {
+					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
+					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
+				}
+			`);
+	        });
+	        uniforms.addShader(shader);
+	    };
+	    return phongMaterial;
 	};
 	class MapHeightNode extends MapNode {
-	    constructor(uniforms, renderer, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = makeMaterial(uniforms, renderer)) {
+	    constructor(uniforms, renderer, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = makeMaterial(uniforms)) {
 	        super(parentNode, mapView, location, level, x, y, geometry, material);
 	        this.uniforms = uniforms;
 	        this.renderer = renderer;
@@ -543,6 +606,8 @@
 	            texture.magFilter = THREE.LinearFilter;
 	            texture.minFilter = THREE.LinearFilter;
 	            texture.needsUpdate = true;
+	            this.material.map = getMap(this.renderer);
+	            this.material.needsUpdate = true;
 	            this.textureLoaded = true;
 	            this.nodeReady();
 	        });
