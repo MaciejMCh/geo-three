@@ -4,7 +4,27 @@
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('three')) :
 	typeof define === 'function' && define.amd ? define(['exports', 'three'], factory) :
 	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Geo = {}, global.THREE));
-})(this, (function (exports, three) { 'use strict';
+})(this, (function (exports, THREE) { 'use strict';
+
+	function _interopNamespace(e) {
+		if (e && e.__esModule) return e;
+		var n = Object.create(null);
+		if (e) {
+			Object.keys(e).forEach(function (k) {
+				if (k !== 'default') {
+					var d = Object.getOwnPropertyDescriptor(e, k);
+					Object.defineProperty(n, k, d.get ? d : {
+						enumerable: true,
+						get: function () { return e[k]; }
+					});
+				}
+			});
+		}
+		n["default"] = e;
+		return Object.freeze(n);
+	}
+
+	var THREE__namespace = /*#__PURE__*/_interopNamespace(THREE);
 
 	class MapProvider {
 	    constructor() {
@@ -67,7 +87,7 @@
 	    });
 	}
 
-	class MapNodeGeometry extends three.BufferGeometry {
+	class MapNodeGeometry extends THREE.BufferGeometry {
 	    constructor(width = 1.0, height = 1.0, widthSegments = 1.0, heightSegments = 1.0, skirt = false, skirtDepth = 10.0) {
 	        super();
 	        const indices = [];
@@ -79,9 +99,9 @@
 	            MapNodeGeometry.buildSkirt(width, height, widthSegments, heightSegments, skirtDepth, indices, vertices, normals, uvs);
 	        }
 	        this.setIndex(indices);
-	        this.setAttribute('position', new three.Float32BufferAttribute(vertices, 3));
-	        this.setAttribute('normal', new three.Float32BufferAttribute(normals, 3));
-	        this.setAttribute('uv', new three.Float32BufferAttribute(uvs, 2));
+	        this.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+	        this.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+	        this.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
 	    }
 	    static buildPlane(width = 1.0, height = 1.0, widthSegments = 1.0, heightSegments = 1.0, indices, vertices, normals, uvs) {
 	        const widthHalf = width / 2;
@@ -194,7 +214,7 @@
 	    }
 	}
 
-	class MapNode extends three.Mesh {
+	class MapNode extends THREE.Mesh {
 	    constructor(parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = null, material = null) {
 	        super(geometry, material);
 	        this.mapView = null;
@@ -241,11 +261,11 @@
 	        return __awaiter(this, void 0, void 0, function* () {
 	            try {
 	                const image = yield this.mapView.provider.fetchTile(this.level, this.x, this.y);
-	                const texture = new three.Texture(image);
+	                const texture = new THREE.Texture(image);
 	                texture.generateMipmaps = false;
-	                texture.format = three.RGBAFormat;
-	                texture.magFilter = three.LinearFilter;
-	                texture.minFilter = three.LinearFilter;
+	                texture.format = THREE.RGBAFormat;
+	                texture.magFilter = THREE.LinearFilter;
+	                texture.minFilter = THREE.LinearFilter;
 	                texture.needsUpdate = true;
 	                this.material.map = texture;
 	                this.nodeReady();
@@ -255,7 +275,7 @@
 	                const context = canvas.getContext('2d');
 	                context.fillStyle = '#FF0000';
 	                context.fillRect(0, 0, 1, 1);
-	                const texture = new three.Texture(canvas);
+	                const texture = new THREE.Texture(canvas);
 	                texture.generateMipmaps = false;
 	                texture.needsUpdate = true;
 	                this.material.map = texture;
@@ -306,7 +326,7 @@
 	        const x = longitude * UnitsUtils.EARTH_ORIGIN / 180.0;
 	        let y = Math.log(Math.tan((90 + latitude) * Math.PI / 360.0)) / (Math.PI / 180.0);
 	        y = y * UnitsUtils.EARTH_ORIGIN / 180.0;
-	        return new three.Vector2(x, y);
+	        return new THREE.Vector2(x, y);
 	    }
 	    static sphericalToDatums(x, y) {
 	        const longitude = x / UnitsUtils.EARTH_ORIGIN * 180.0;
@@ -328,7 +348,7 @@
 
 	class MapPlaneNode extends MapNode {
 	    constructor(parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0) {
-	        super(parentNode, mapView, location, level, x, y, MapPlaneNode.geometry, new three.MeshBasicMaterial({ wireframe: false }));
+	        super(parentNode, mapView, location, level, x, y, MapPlaneNode.geometry, new THREE.MeshBasicMaterial({ wireframe: false }));
 	        this.matrixAutoUpdate = false;
 	        this.isMesh = true;
 	        this.visible = false;
@@ -376,9 +396,9 @@
 	}
 	MapPlaneNode.geometry = new MapNodeGeometry(1, 1, 1, 1, false);
 	MapPlaneNode.baseGeometry = MapPlaneNode.geometry;
-	MapPlaneNode.baseScale = new three.Vector3(UnitsUtils.EARTH_PERIMETER, 1.0, UnitsUtils.EARTH_PERIMETER);
+	MapPlaneNode.baseScale = new THREE.Vector3(UnitsUtils.EARTH_PERIMETER, 1.0, UnitsUtils.EARTH_PERIMETER);
 
-	class MapNodeHeightGeometry extends three.BufferGeometry {
+	class MapNodeHeightGeometry extends THREE.BufferGeometry {
 	    constructor(width = 1.0, height = 1.0, widthSegments = 1.0, heightSegments = 1.0, skirt = false, skirtDepth = 10.0, imageData = null, calculateNormals = true) {
 	        super();
 	        const indices = [];
@@ -398,9 +418,9 @@
 	            MapNodeGeometry.buildSkirt(width, height, widthSegments, heightSegments, skirtDepth, indices, vertices, normals, uvs);
 	        }
 	        this.setIndex(indices);
-	        this.setAttribute('position', new three.Float32BufferAttribute(vertices, 3));
-	        this.setAttribute('normal', new three.Float32BufferAttribute(normals, 3));
-	        this.setAttribute('uv', new three.Float32BufferAttribute(uvs, 2));
+	        this.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+	        this.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+	        this.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
 	        if (calculateNormals) {
 	            this.computeNormals(widthSegments, heightSegments);
 	        }
@@ -413,9 +433,9 @@
 	            for (let i = 0; i < normalLength; i++) {
 	                normalAttribute.setXYZ(i, 0, 0, 0);
 	            }
-	            const pA = new three.Vector3(), pB = new three.Vector3(), pC = new three.Vector3();
-	            const nA = new three.Vector3(), nB = new three.Vector3(), nC = new three.Vector3();
-	            const cb = new three.Vector3(), ab = new three.Vector3();
+	            const pA = new THREE.Vector3(), pB = new THREE.Vector3(), pC = new THREE.Vector3();
+	            const nA = new THREE.Vector3(), nB = new THREE.Vector3(), nC = new THREE.Vector3();
+	            const cb = new THREE.Vector3(), ab = new THREE.Vector3();
 	            const indexLength = heightSegments * widthSegments * 6;
 	            for (let i = 0; i < indexLength; i += 3) {
 	                const vA = this.index.getX(i + 0);
@@ -449,69 +469,51 @@
 	    },
 	};
 
-	const editLines = (code, editor) => {
-	    const lines = code.split('\n');
-	    editor(lines);
-	    const result = lines.join('\n');
-	    return result;
+	const xd = (renderer) => {
+	    var scene = new THREE__namespace.Scene();
+	    var camera = new THREE__namespace.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
+	    var bufferScene = new THREE__namespace.Scene();
+	    var bufferTexture = new THREE__namespace.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: THREE__namespace.LinearFilter, magFilter: THREE__namespace.NearestFilter });
+	    var redMaterial = new THREE__namespace.MeshBasicMaterial({ color: 0xF06565 });
+	    var boxGeometry = new THREE__namespace.BoxGeometry(5, 5, 5);
+	    var boxObject = new THREE__namespace.Mesh(boxGeometry, redMaterial);
+	    boxObject.position.z = -10;
+	    bufferScene.add(boxObject);
+	    var blueMaterial = new THREE__namespace.MeshBasicMaterial({ color: 0x7074FF });
+	    var plane = new THREE__namespace.PlaneBufferGeometry(window.innerWidth, window.innerHeight);
+	    var planeObject = new THREE__namespace.Mesh(plane, blueMaterial);
+	    planeObject.position.z = -15;
+	    bufferScene.add(planeObject);
+	    var boxMaterial = new THREE__namespace.MeshBasicMaterial({ map: bufferTexture.texture });
+	    var boxGeometry2 = new THREE__namespace.BoxGeometry(5, 5, 5);
+	    var mainBoxObject = new THREE__namespace.Mesh(boxGeometry2, boxMaterial);
+	    mainBoxObject.position.z = -10;
+	    scene.add(mainBoxObject);
+	    function render() {
+	        requestAnimationFrame(render);
+	        boxObject.rotation.y += 0.01;
+	        boxObject.rotation.x += 0.01;
+	        mainBoxObject.rotation.y += 0.01;
+	        mainBoxObject.rotation.x += 0.01;
+	        const target = renderer.getRenderTarget();
+	        renderer.setRenderTarget(bufferTexture);
+	        renderer.render(bufferScene, camera);
+	        renderer.setRenderTarget(target);
+	    }
+	    render();
+	    console.log('bufferTexture', bufferTexture);
+	    bufferTexture.texture.name = 'buffered';
+	    return { boxMaterial };
 	};
-	const makeMaterial = (uniforms) => {
-	    const phongMaterial = new three.MeshPhongMaterial({ wireframe: false, color: 0xffffff });
-	    phongMaterial.onBeforeCompile = shader => {
-	        const varryingDeclarations = [
-	            'varying vec3 vWorldPosition;',
-	            'varying float vDepth;',
-	        ];
-	        shader.vertexShader = editLines(shader.vertexShader, lines => {
-	            lines.splice(0, 0, [
-	                ...varryingDeclarations,
-	            ].join('\n'));
-	            lines.splice(lines.length - 1, 0, `
-				vec4 worldPosition = vec4(transformed, 1.0);
-				worldPosition = modelMatrix * worldPosition;
-				vWorldPosition = vec3(worldPosition);
-				vDepth = gl_Position.w;
-			`);
-	        });
-	        shader.fragmentShader = editLines(shader.fragmentShader, lines => {
-	            lines.splice(0, 0, [
-	                ...varryingDeclarations,
-	                `
-					struct Circle {
-						vec3 worldOrigin;
-						float radius;
-					};
-				`,
-	                `
-					vec4 circleColor(Circle circle, vec3 worldPosition, float depth) {
-						float dist = distance(worldPosition, circle.worldOrigin);
-						float otherLimit = circle.radius - (depth * 0.004);
-						bool isRed = dist < circle.radius && dist > otherLimit;
-						if (isRed) {
-							return vec4(1.0, 0.0, 0.0, 1.0);
-						} else {
-							return vec4(0.0, 0.0, 0.0, 0.0);
-						}
-					}
-				`,
-	                `uniform Circle circles[${constants.circles.limit}];`,
-	                'uniform int circlesCount;',
-	            ].join('\n'));
-	            lines.splice(lines.length - 1, 0, `
-				for (int i = 0; i <= circlesCount; i++) {
-					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
-					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
-				}
-			`);
-	        });
-	        uniforms.addShader(shader);
-	    };
-	    return phongMaterial;
+
+	const makeMaterial = (uniforms, renderer) => {
+	    return xd(renderer).boxMaterial;
 	};
 	class MapHeightNode extends MapNode {
-	    constructor(uniforms, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = makeMaterial(uniforms)) {
+	    constructor(uniforms, renderer, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, geometry = MapHeightNode.geometry, material = makeMaterial(uniforms, renderer)) {
 	        super(parentNode, mapView, location, level, x, y, geometry, material);
 	        this.uniforms = uniforms;
+	        this.renderer = renderer;
 	        this.heightLoaded = false;
 	        this.textureLoaded = false;
 	        this.geometrySize = 16;
@@ -528,17 +530,19 @@
 	        this.loadTexture();
 	        this.loadHeightGeometry();
 	    }
+	    identity() {
+	        return `MapHeighNode-${this.level}/${this.x}/${this.y}`;
+	    }
 	    loadTexture() {
 	        return __awaiter(this, void 0, void 0, function* () {
-	            const texture = new three.Texture();
+	            const texture = new THREE.Texture();
+	            texture.name = `${this.identity()}_texture`;
 	            texture.image = yield this.mapView.provider.fetchTile(this.level, this.x, this.y);
 	            texture.generateMipmaps = false;
-	            texture.format = three.RGBAFormat;
-	            texture.magFilter = three.LinearFilter;
-	            texture.minFilter = three.LinearFilter;
+	            texture.format = THREE.RGBAFormat;
+	            texture.magFilter = THREE.LinearFilter;
+	            texture.minFilter = THREE.LinearFilter;
 	            texture.needsUpdate = true;
-	            this.material.map = texture;
-	            this.material.needsUpdate = true;
 	            this.textureLoaded = true;
 	            this.nodeReady();
 	        });
@@ -555,25 +559,25 @@
 	        const Constructor = Object.getPrototypeOf(this).constructor;
 	        const x = this.x * 2;
 	        const y = this.y * 2;
-	        let node = new Constructor(this.uniforms, this, this.mapView, MapNode.topLeft, level, x, y);
+	        let node = new Constructor(this.uniforms, this.renderer, this, this.mapView, MapNode.topLeft, level, x, y);
 	        node.scale.set(0.5, 1.0, 0.5);
 	        node.position.set(-0.25, 0, -0.25);
 	        this.add(node);
 	        node.updateMatrix();
 	        node.updateMatrixWorld(true);
-	        node = new Constructor(this.uniforms, this, this.mapView, MapNode.topRight, level, x + 1, y);
+	        node = new Constructor(this.uniforms, this.renderer, this, this.mapView, MapNode.topRight, level, x + 1, y);
 	        node.scale.set(0.5, 1.0, 0.5);
 	        node.position.set(0.25, 0, -0.25);
 	        this.add(node);
 	        node.updateMatrix();
 	        node.updateMatrixWorld(true);
-	        node = new Constructor(this.uniforms, this, this.mapView, MapNode.bottomLeft, level, x, y + 1);
+	        node = new Constructor(this.uniforms, this.renderer, this, this.mapView, MapNode.bottomLeft, level, x, y + 1);
 	        node.scale.set(0.5, 1.0, 0.5);
 	        node.position.set(-0.25, 0, 0.25);
 	        this.add(node);
 	        node.updateMatrix();
 	        node.updateMatrixWorld(true);
-	        node = new Constructor(this.uniforms, this, this.mapView, MapNode.bottomRight, level, x + 1, y + 1);
+	        node = new Constructor(this.uniforms, this.renderer, this, this.mapView, MapNode.bottomRight, level, x + 1, y + 1);
 	        node.scale.set(0.5, 1.0, 0.5);
 	        node.position.set(0.25, 0, 0.25);
 	        this.add(node);
@@ -606,16 +610,16 @@
 	MapHeightNode.tileSize = 256;
 	MapHeightNode.geometry = new MapNodeGeometry(1, 1, 1, 1);
 	MapHeightNode.baseGeometry = MapPlaneNode.geometry;
-	MapHeightNode.baseScale = new three.Vector3(UnitsUtils.EARTH_PERIMETER, 1, UnitsUtils.EARTH_PERIMETER);
+	MapHeightNode.baseScale = new THREE.Vector3(UnitsUtils.EARTH_PERIMETER, 1, UnitsUtils.EARTH_PERIMETER);
 
-	class MapSphereNodeGeometry extends three.BufferGeometry {
+	class MapSphereNodeGeometry extends THREE.BufferGeometry {
 	    constructor(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength) {
 	        super();
 	        const thetaEnd = thetaStart + thetaLength;
 	        let index = 0;
 	        const grid = [];
-	        const vertex = new three.Vector3();
-	        const normal = new three.Vector3();
+	        const vertex = new THREE.Vector3();
+	        const normal = new THREE.Vector3();
 	        const indices = [];
 	        const vertices = [];
 	        const normals = [];
@@ -651,15 +655,15 @@
 	            }
 	        }
 	        this.setIndex(indices);
-	        this.setAttribute('position', new three.Float32BufferAttribute(vertices, 3));
-	        this.setAttribute('normal', new three.Float32BufferAttribute(normals, 3));
-	        this.setAttribute('uv', new three.Float32BufferAttribute(uvs, 2));
+	        this.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+	        this.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+	        this.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
 	    }
 	}
 
 	class MapSphereNode extends MapNode {
 	    constructor(parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0) {
-	        super(parentNode, mapView, location, level, x, y, MapSphereNode.createGeometry(level, x, y), new three.MeshBasicMaterial({ wireframe: false }));
+	        super(parentNode, mapView, location, level, x, y, MapSphereNode.createGeometry(level, x, y), new THREE.MeshBasicMaterial({ wireframe: false }));
 	        this.applyScaleNode();
 	        this.matrixAutoUpdate = false;
 	        this.isMesh = true;
@@ -682,9 +686,9 @@
 	    applyScaleNode() {
 	        this.geometry.computeBoundingBox();
 	        const box = this.geometry.boundingBox.clone();
-	        const center = box.getCenter(new three.Vector3());
-	        const matrix = new three.Matrix4();
-	        matrix.compose(new three.Vector3(-center.x, -center.y, -center.z), new three.Quaternion(), new three.Vector3(UnitsUtils.EARTH_RADIUS, UnitsUtils.EARTH_RADIUS, UnitsUtils.EARTH_RADIUS));
+	        const center = box.getCenter(new THREE.Vector3());
+	        const matrix = new THREE.Matrix4();
+	        matrix.compose(new THREE.Vector3(-center.x, -center.y, -center.z), new THREE.Quaternion(), new THREE.Vector3(UnitsUtils.EARTH_RADIUS, UnitsUtils.EARTH_RADIUS, UnitsUtils.EARTH_RADIUS));
 	        this.geometry.applyMatrix4(matrix);
 	        this.position.copy(center);
 	        this.updateMatrix();
@@ -730,12 +734,12 @@
 	    }
 	}
 	MapSphereNode.baseGeometry = new MapSphereNodeGeometry(UnitsUtils.EARTH_RADIUS, 64, 64, 0, 2 * Math.PI, 0, Math.PI);
-	MapSphereNode.baseScale = new three.Vector3(1, 1, 1);
+	MapSphereNode.baseScale = new THREE.Vector3(1, 1, 1);
 	MapSphereNode.segments = 80;
 
 	class MapHeightNodeShader extends MapHeightNode {
 	    constructor(uniforms, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0) {
-	        const material = MapHeightNodeShader.prepareMaterial(new three.MeshPhongMaterial({ map: MapHeightNodeShader.emptyTexture, color: 0xFFFFFF }));
+	        const material = MapHeightNodeShader.prepareMaterial(new THREE.MeshPhongMaterial({ map: MapHeightNodeShader.emptyTexture, color: 0xFFFFFF }));
 	        super(uniforms, parentNode, mapView, location, level, x, y, MapHeightNodeShader.geometry, material);
 	        this.frustumCulled = false;
 	    }
@@ -766,11 +770,11 @@
 	    loadTexture() {
 	        return __awaiter(this, void 0, void 0, function* () {
 	            const image = yield this.mapView.provider.fetchTile(this.level, this.x, this.y);
-	            const texture = new three.Texture(image);
+	            const texture = new THREE.Texture(image);
 	            texture.generateMipmaps = false;
-	            texture.format = three.RGBAFormat;
-	            texture.magFilter = three.LinearFilter;
-	            texture.minFilter = three.LinearFilter;
+	            texture.format = THREE.RGBAFormat;
+	            texture.magFilter = THREE.LinearFilter;
+	            texture.minFilter = THREE.LinearFilter;
 	            texture.needsUpdate = true;
 	            this.material.map = texture;
 	            this.material.needsUpdate = true;
@@ -784,12 +788,12 @@
 	            if (this.mapView.heightProvider === null) {
 	                throw new Error('GeoThree: MapView.heightProvider provider is null.');
 	            }
-	            const texture = new three.Texture();
+	            const texture = new THREE.Texture();
 	            texture.image = yield this.mapView.heightProvider.fetchTile(this.level, this.x, this.y);
 	            texture.generateMipmaps = false;
-	            texture.format = three.RGBAFormat;
-	            texture.magFilter = three.NearestFilter;
-	            texture.minFilter = three.NearestFilter;
+	            texture.format = THREE.RGBAFormat;
+	            texture.magFilter = THREE.NearestFilter;
+	            texture.minFilter = THREE.NearestFilter;
 	            texture.needsUpdate = true;
 	            this.material.userData.heightMap.value = texture;
 	            this.material.map = texture;
@@ -808,19 +812,19 @@
 	        return false;
 	    }
 	}
-	MapHeightNodeShader.emptyTexture = new three.Texture();
+	MapHeightNodeShader.emptyTexture = new THREE.Texture();
 	MapHeightNodeShader.geometrySize = 256;
 	MapHeightNodeShader.geometry = new MapNodeGeometry(1.0, 1.0, MapHeightNodeShader.geometrySize, MapHeightNodeShader.geometrySize, true);
 	MapHeightNodeShader.baseGeometry = MapPlaneNode.geometry;
-	MapHeightNodeShader.baseScale = new three.Vector3(UnitsUtils.EARTH_PERIMETER, 1, UnitsUtils.EARTH_PERIMETER);
+	MapHeightNodeShader.baseScale = new THREE.Vector3(UnitsUtils.EARTH_PERIMETER, 1, UnitsUtils.EARTH_PERIMETER);
 
 	class LODRaycast {
 	    constructor() {
 	        this.subdivisionRays = 1;
 	        this.thresholdUp = 0.6;
 	        this.thresholdDown = 0.15;
-	        this.raycaster = new three.Raycaster();
-	        this.mouse = new three.Vector2();
+	        this.raycaster = new THREE.Raycaster();
+	        this.mouse = new THREE.Vector2();
 	        this.powerDistance = false;
 	        this.scaleDistance = true;
 	    }
@@ -839,7 +843,7 @@
 	            }
 	            if (this.scaleDistance) {
 	                const matrix = node.matrixWorld.elements;
-	                const vector = new three.Vector3(matrix[0], matrix[1], matrix[2]);
+	                const vector = new THREE.Vector3(matrix[0], matrix[1], matrix[2]);
 	                distance = vector.length() / distance;
 	            }
 	            if (distance > this.thresholdUp) {
@@ -1088,10 +1092,10 @@
 
 	class MapMartiniHeightNode extends MapHeightNode {
 	    constructor(uniforms, parentNode = null, mapView = null, location = MapNode.root, level = 0, x = 0, y = 0, { elevationDecoder = null, meshMaxError = 10, exageration = 1 } = {}) {
-	        super(uniforms, parentNode, mapView, location, level, x, y, MapMartiniHeightNode.geometry, MapMartiniHeightNode.prepareMaterial(new three.MeshPhongMaterial({
+	        super(uniforms, parentNode, mapView, location, level, x, y, MapMartiniHeightNode.geometry, MapMartiniHeightNode.prepareMaterial(new THREE.MeshPhongMaterial({
 	            map: MapMartiniHeightNode.emptyTexture,
 	            color: 0xFFFFFF,
-	            side: three.DoubleSide
+	            side: THREE.DoubleSide
 	        }), level, exageration));
 	        this.elevationDecoder = {
 	            rScaler: 256,
@@ -1246,16 +1250,16 @@
 	            const tile = martini.createTile(terrain);
 	            const { vertices, triangles } = tile.getMesh(typeof this.meshMaxError === 'function' ? this.meshMaxError(this.level) : this.meshMaxError);
 	            const attributes = MapMartiniHeightNode.getMeshAttributes(vertices, terrain, tileSize, [-0.5, -0.5, 0.5, 0.5], this.exageration);
-	            this.geometry = new three.BufferGeometry();
-	            this.geometry.setIndex(new three.Uint32BufferAttribute(triangles, 1));
-	            this.geometry.setAttribute('position', new three.Float32BufferAttribute(attributes.position.value, attributes.position.size));
-	            this.geometry.setAttribute('uv', new three.Float32BufferAttribute(attributes.uv.value, attributes.uv.size));
+	            this.geometry = new THREE.BufferGeometry();
+	            this.geometry.setIndex(new THREE.Uint32BufferAttribute(triangles, 1));
+	            this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(attributes.position.value, attributes.position.size));
+	            this.geometry.setAttribute('uv', new THREE.Float32BufferAttribute(attributes.uv.value, attributes.uv.size));
 	            this.geometry.rotateX(Math.PI);
-	            var texture = new three.Texture(image);
+	            var texture = new THREE.Texture(image);
 	            texture.generateMipmaps = false;
-	            texture.format = three.RGBAFormat;
-	            texture.magFilter = three.NearestFilter;
-	            texture.minFilter = three.NearestFilter;
+	            texture.format = THREE.RGBAFormat;
+	            texture.magFilter = THREE.NearestFilter;
+	            texture.minFilter = THREE.NearestFilter;
 	            texture.needsUpdate = true;
 	            this.material.userData.heightMap.value = texture;
 	            this.material.map = texture;
@@ -1274,7 +1278,7 @@
 	    }
 	}
 	MapMartiniHeightNode.geometrySize = 16;
-	MapMartiniHeightNode.emptyTexture = new three.Texture();
+	MapMartiniHeightNode.emptyTexture = new THREE.Texture();
 	MapMartiniHeightNode.geometry = new MapNodeGeometry(1, 1, 1, 1);
 	MapMartiniHeightNode.tileSize = 256;
 
@@ -1287,7 +1291,7 @@
 	    get worldPosition() {
 	        if (!this._worldPosition) {
 	            var coords = UnitsUtils.datumsToSpherical(this.latitude, this.longitude);
-	            this._worldPosition = new three.Vector3(coords.x, 0, -coords.y);
+	            this._worldPosition = new THREE.Vector3(coords.x, 0, -coords.y);
 	        }
 	        return this._worldPosition;
 	    }
@@ -1295,7 +1299,7 @@
 
 	class DrawableIdentity {
 	    constructor() {
-	        this.raw = three.MathUtils.generateUUID();
+	        this.raw = THREE.MathUtils.generateUUID();
 	    }
 	}
 	class ShaderUniforms {
@@ -1346,7 +1350,7 @@
 	            this.setupCircles(uniforms);
 	        };
 	        this.makeBlankCircle = () => ({
-	            worldOrigin: new three.Vector3(),
+	            worldOrigin: new THREE.Vector3(),
 	            radius: 0,
 	        });
 	        this.setupCircles = (uniforms) => {
@@ -1354,15 +1358,16 @@
 	            for (let index = 0; index < constants.circles.limit; index++) {
 	                circles.push(this.makeBlankCircle());
 	            }
-	            uniforms['circles'] = new three.Uniform(circles);
-	            uniforms['circlesCount'] = new three.Uniform(0);
+	            uniforms['circles'] = new THREE.Uniform(circles);
+	            uniforms['circlesCount'] = new THREE.Uniform(0);
 	        };
 	    }
 	}
 
-	class MapView extends three.Mesh {
-	    constructor(root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
-	        super(undefined, new three.MeshBasicMaterial({ transparent: true, opacity: 0.0 }));
+	class MapView extends THREE.Mesh {
+	    constructor(renderer, root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
+	        super(undefined, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 }));
+	        this.renderer = renderer;
 	        this.lod = null;
 	        this.provider = null;
 	        this.heightProvider = null;
@@ -1371,6 +1376,7 @@
 	        this.onBeforeRender = (renderer, scene, camera, geometry, material, group) => {
 	            this.lod.updateLOD(this, camera, renderer, scene);
 	        };
+	        this.name = 'mapView';
 	        this.lod = new LODRaycast();
 	        this.provider = provider;
 	        this.heightProvider = heightProvider;
@@ -1382,7 +1388,7 @@
 	                throw new Error('Map mode ' + root + ' does is not registered.');
 	            }
 	            const rootConstructor = MapView.mapModes.get(root);
-	            root = new rootConstructor(this.uniforms, null, this);
+	            root = new rootConstructor(this.uniforms, this.renderer, null, this);
 	        }
 	        if (this.root !== null) {
 	            this.remove(this.root);
@@ -1450,8 +1456,8 @@
 	    [MapView.MARTINI, MapMartiniHeightNode]
 	]);
 
-	const pov$1 = new three.Vector3();
-	const position$1 = new three.Vector3();
+	const pov$1 = new THREE.Vector3();
+	const position$1 = new THREE.Vector3();
 	class LODRadial {
 	    constructor() {
 	        this.subdivideDistance = 50;
@@ -1473,10 +1479,10 @@
 	    }
 	}
 
-	const projection = new three.Matrix4();
-	const pov = new three.Vector3();
-	const frustum = new three.Frustum();
-	const position = new three.Vector3();
+	const projection = new THREE.Matrix4();
+	const pov = new THREE.Vector3();
+	const frustum = new THREE.Frustum();
+	const position = new THREE.Vector3();
 	class LODFrustum extends LODRadial {
 	    constructor() {
 	        super(...arguments);
@@ -1814,8 +1820,8 @@
 	    fetchTile(zoom, x, y) {
 	        const canvas = CanvasUtils.createOffscreenCanvas(this.resolution, this.resolution);
 	        const context = canvas.getContext('2d');
-	        const green = new three.Color(0x00ff00);
-	        const red = new three.Color(0xff0000);
+	        const green = new THREE.Color(0x00ff00);
+	        const red = new THREE.Color(0xff0000);
 	        const color = green.lerpHSL(red, (zoom - this.minZoom) / (this.maxZoom - this.minZoom));
 	        context.fillStyle = color.getStyle();
 	        context.fillRect(0, 0, this.resolution, this.resolution);
@@ -1832,8 +1838,8 @@
 	class HeightDebugProvider extends MapProvider {
 	    constructor(provider) {
 	        super();
-	        this.fromColor = new three.Color(0xff0000);
-	        this.toColor = new three.Color(0x00ff00);
+	        this.fromColor = new THREE.Color(0xff0000);
+	        this.toColor = new THREE.Color(0x00ff00);
 	        this.provider = provider;
 	    }
 	    fetchTile(zoom, x, y) {

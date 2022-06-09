@@ -112,7 +112,7 @@
 			{
 				providers = createProviders();
 				scene.remove(map);
-				map = new Geo.MapView(modes[mode.selectedIndex][1], providers[providerColor.selectedIndex][1], providers[providerHeight.selectedIndex][1]);
+				map = new Geo.MapView(renderer, modes[mode.selectedIndex][1], providers[providerColor.selectedIndex][1], providers[providerHeight.selectedIndex][1]);
 				scene.add(map);
 			};
 		}
@@ -144,6 +144,7 @@
 				);
 				scene.remove(map);
 				map = new Geo.MapView(
+					renderer,
 					modes[mode.selectedIndex][1],
 					providers[providerColor.selectedIndex][1],
 					providers[providerHeight.selectedIndex][1],
@@ -198,6 +199,7 @@
 		const pprovider = new Geo.MapBoxProvider('DEV_MAPBOX_API_KEY', "mapbox.satellite", Geo.MapBoxProvider.MAP_ID, "jpg70", false);
 		const pprovider2 = new Geo.MapBoxProvider('DEV_MAPBOX_API_KEY', "mapbox.terrain-rgb", Geo.MapBoxProvider.MAP_ID, "pngraw");
 		var map = new Geo.MapView(
+			renderer,
 			mmode,
 			pprovider,
 			pprovider2,

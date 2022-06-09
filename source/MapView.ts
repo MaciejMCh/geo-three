@@ -11,6 +11,7 @@ import {LODControl} from './lod/LODControl';
 import {MapMartiniHeightNode} from './nodes/MapMartiniHeightNode';
 import { Geoposition } from './nodes/primitive';
 import { ShaderUniforms } from './uniforms';
+import { xd } from './deferredRendering/deferredRendering';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -88,9 +89,10 @@ export class MapView extends Mesh
 	 * @param provider - Map color tile provider by default a OSM maps provider is used if none specified.
 	 * @param heightProvider - Map height tile provider, by default no height provider is used.
 	 */
-	public constructor(root: (number | MapNode) = MapView.PLANAR, provider: MapProvider = new OpenStreetMapsProvider(), heightProvider: MapProvider = null) 
+	public constructor(private renderer: WebGLRenderer, root: (number | MapNode) = MapView.PLANAR, provider: MapProvider = new OpenStreetMapsProvider(), heightProvider: MapProvider = null) 
 	{
 		super(undefined, new MeshBasicMaterial({transparent: true, opacity: 0.0}));
+		this.name = 'mapView';
 
 		this.lod = new LODRaycast();
 
@@ -131,7 +133,7 @@ export class MapView extends Mesh
 			const rootConstructor = MapView.mapModes.get(root);
 
 			// @ts-ignore
-			root = new rootConstructor(this.uniforms, null, this);
+			root = new rootConstructor(this.uniforms, this.renderer, null, this);
 		}
 
 		// Remove old root
@@ -167,6 +169,11 @@ export class MapView extends Mesh
 					this.uniforms.remove.circle(identity2); // remove smaller;
 				}, 1000);
 			}, 3000);
+
+			// setTimeout(() => {
+			// 	const { bufferTexture } = xd();
+			// 	bufferTexture.texture.name = 'deferred';
+			// }, 1000);
 		}
 	}
 

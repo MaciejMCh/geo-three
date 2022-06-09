@@ -4,6 +4,7 @@ import { MapProvider } from './providers/MapProvider';
 import { LODControl } from './lod/LODControl';
 import { ShaderUniforms } from './uniforms';
 export declare class MapView extends Mesh {
+    private renderer;
     static PLANAR: number;
     static SPHERICAL: number;
     static HEIGHT: number;
@@ -15,7 +16,7 @@ export declare class MapView extends Mesh {
     heightProvider: MapProvider;
     root: MapNode;
     readonly uniforms: ShaderUniforms;
-    constructor(root?: (number | MapNode), provider?: MapProvider, heightProvider?: MapProvider);
+    constructor(renderer: WebGLRenderer, root?: (number | MapNode), provider?: MapProvider, heightProvider?: MapProvider);
     onBeforeRender: (renderer: WebGLRenderer, scene: Scene, camera: Camera, geometry: BufferGeometry, material: Material, group: Group) => void;
     setRoot(root: (MapNode | number)): void;
     setProvider(provider: MapProvider): void;
