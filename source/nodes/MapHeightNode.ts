@@ -1,4 +1,4 @@
-import {LinearFilter, Material, MeshPhongMaterial, BufferGeometry, RGBAFormat, Texture, Vector3, Raycaster, Intersection, WebGLRenderer, Uniform} from 'three';
+import {LinearFilter, Material, MeshPhongMaterial, BufferGeometry, RGBAFormat, Texture, Vector3, Raycaster, Intersection, WebGLRenderer, Uniform, Wrapping, ClampToEdgeWrapping} from 'three';
 import {MapNodeGeometry} from '../geometries/MapNodeGeometry';
 import {MapNode} from './MapNode';
 import {MapPlaneNode} from './MapPlaneNode';
@@ -15,6 +15,8 @@ var xdMap!: Texture;
 const getMap = (renderer: WebGLRenderer) => {
 	if (!xdMap) {
 		xdMap = xd(renderer).boxMaterial.map;
+		// xdMap.wrapS = ClampToEdgeWrapping;
+		// xdMap.wrapT = ClampToEdgeWrapping;
 	}
 
 	return xdMap;
@@ -79,7 +81,10 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
-				gl_FragColor = mix(gl_FragColor, texture2D(tSec, vUv), 0.5);
+				float scale = 0.0000001;
+				float qqqq = (vWorldPosition.x + vWorldPosition.y + vWorldPosition.z) * 0.0000001;
+				vec2 worldTexel = vec2(vWorldPosition.x * scale, vWorldPosition.z * scale);
+				gl_FragColor = mix(gl_FragColor, texture2D(tSec, worldTexel), 0.5);
 			`);
 		});
 

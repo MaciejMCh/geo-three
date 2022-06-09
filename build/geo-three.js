@@ -567,7 +567,10 @@
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
-				gl_FragColor = mix(gl_FragColor, texture2D(tSec, vUv), 0.5);
+				float scale = 0.0000001;
+				float qqqq = (vWorldPosition.x + vWorldPosition.y + vWorldPosition.z) * 0.0000001;
+				vec2 worldTexel = vec2(vWorldPosition.x * scale, vWorldPosition.z * scale);
+				gl_FragColor = mix(gl_FragColor, texture2D(tSec, worldTexel), 0.5);
 			`);
 	        });
 	        uniforms.addShader(shader);
