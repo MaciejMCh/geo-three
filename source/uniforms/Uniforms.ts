@@ -11,7 +11,7 @@ export class DrawableIdentity {
 export class ShaderUniforms {
     private circlesCount = 0;
 
-    private uniforms!: Uniforms;
+    public uniforms!: Uniforms;
 
     private circlesByIds: Record<string, object> = {};
 

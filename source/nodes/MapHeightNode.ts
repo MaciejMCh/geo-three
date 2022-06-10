@@ -58,6 +58,13 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 						vec3 worldOrigin;
 						float radius;
 					};
+
+					struct Shape {
+						float aX;
+						float bX;
+						float aY;
+						float bY;
+					};
 				`,
 				`
 					vec4 circleColor(Circle circle, vec3 worldPosition, float depth) {
@@ -71,9 +78,23 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 						}
 					}
 				`,
+				`
+					vec4 shapeColor(Shape shape, sampler2D bufferSampler, vec3 worldPosition) {
+						vec2 worldTexel = vec2(
+							(worldPosition.x * shape.aX) + shape.bX,
+							(worldPosition.z * shape.aY) + shape.bY
+						);
+						if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
+							return texture2D(bufferSampler, worldTexel);
+						} else {
+							return vec4(0.0, 0.0, 0.0, 0.0);
+						}
+					}
+				`,
 				`uniform Circle circles[${constants.circles.limit}];`,
 				'uniform int circlesCount;',
 				'uniform sampler2D tSec;',
+				'uniform Shape shape;'
 			].join('\n'));
 
 			lines.splice(lines.length - 1, 0, `
@@ -81,16 +102,19 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
-				float scale = 0.0000001;
-				float qqqq = (vWorldPosition.x + vWorldPosition.y + vWorldPosition.z) * 0.0000001;
-				vec2 worldTexel = vec2(vWorldPosition.x * scale, vWorldPosition.z * scale);
-				// gl_FragColor = mix(gl_FragColor, texture2D(tSec, worldTexel), 0.5);
-				gl_FragColor = mix(gl_FragColor, texture2D(tSec, worldTexel), 1.0);
+				vec4 shapeColor = shapeColor(shape, tSec, vWorldPosition);
+				gl_FragColor = mix(gl_FragColor, shapeColor, shapeColor.a);
 			`);
 		});
 
 		uniforms.addShader(shader);
 		shader.uniforms['tSec'] = new Uniform(getMap(renderer));
+		shader.uniforms['shape'] = new Uniform({
+			aX: 0.0000001,
+			bX: 0.0,
+			aY: 0.0000001,
+			bY: 0.0,
+		});
 	};
 
 	return phongMaterial;

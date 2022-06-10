@@ -1,11 +1,14 @@
-import { Shader } from 'three';
+import { IUniform, Shader } from 'three';
 import { Geoposition } from '../nodes/primitive';
+declare type Uniforms = {
+    [uniform: string]: IUniform<any>;
+};
 export declare class DrawableIdentity {
     readonly raw: string;
 }
 export declare class ShaderUniforms {
     private circlesCount;
-    private uniforms;
+    uniforms: Uniforms;
     private circlesByIds;
     create: {
         circle: () => DrawableIdentity;
@@ -25,3 +28,4 @@ export declare class ShaderUniforms {
     private makeBlankCircle;
     private setupCircles;
 }
+export {};

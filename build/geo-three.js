@@ -62,7 +62,7 @@
 	    }
 	}
 
-	/******************************************************************************
+	/*! *****************************************************************************
 	Copyright (c) Microsoft Corporation.
 
 	Permission to use, copy, modify, and/or distribute this software for any
@@ -578,6 +578,13 @@
 						vec3 worldOrigin;
 						float radius;
 					};
+
+					struct Shape {
+						float aX;
+						float bX;
+						float aY;
+						float bY;
+					};
 				`,
 	                `
 					vec4 circleColor(Circle circle, vec3 worldPosition, float depth) {
@@ -591,24 +598,41 @@
 						}
 					}
 				`,
+	                `
+					vec4 shapeColor(Shape shape, sampler2D bufferSampler, vec3 worldPosition) {
+						vec2 worldTexel = vec2(
+							(worldPosition.x * shape.aX) + shape.bX,
+							(worldPosition.z * shape.aY) + shape.bY
+						);
+						if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
+							return texture2D(bufferSampler, worldTexel);
+						} else {
+							return vec4(0.0, 0.0, 0.0, 0.0);
+						}
+					}
+				`,
 	                `uniform Circle circles[${constants.circles.limit}];`,
 	                'uniform int circlesCount;',
 	                'uniform sampler2D tSec;',
+	                'uniform Shape shape;'
 	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
 				for (int i = 0; i <= circlesCount; i++) {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
-				float scale = 0.0000001;
-				float qqqq = (vWorldPosition.x + vWorldPosition.y + vWorldPosition.z) * 0.0000001;
-				vec2 worldTexel = vec2(vWorldPosition.x * scale, vWorldPosition.z * scale);
-				// gl_FragColor = mix(gl_FragColor, texture2D(tSec, worldTexel), 0.5);
-				gl_FragColor = mix(gl_FragColor, texture2D(tSec, worldTexel), 1.0);
+				vec4 shapeColor = shapeColor(shape, tSec, vWorldPosition);
+				gl_FragColor = mix(gl_FragColor, shapeColor, shapeColor.a);
 			`);
 	        });
 	        uniforms.addShader(shader);
 	        shader.uniforms['tSec'] = new THREE.Uniform(getMap(renderer));
+	        shader.uniforms['shape'] = new THREE.Uniform({
+	            aX: 0.0000001,
+	            bX: 0.0,
+	            aY: 0.0000001,
+	            bY: 0.0,
+	        });
 	    };
 	    return phongMaterial;
 	};
@@ -1516,6 +1540,31 @@
 	                    this.uniforms.remove.circle(identity2);
 	                }, 1000);
 	            }, 3000);
+	            function eToNumber(num) {
+	                let sign = "";
+	                (num += "").charAt(0) == "-" && (num = num.substring(1), sign = "-");
+	                let arr = num.split(/[e]/ig);
+	                if (arr.length < 2)
+	                    return sign + num;
+	                let dot = (.1).toLocaleString().substr(1, 1), n = arr[0], exp = +arr[1], w = (n = n.replace(/^0+/, '')).replace(dot, ''), pos = n.split(dot)[1] ? n.indexOf(dot) + exp : w.length + exp, L = pos - w.length, s = "" + BigInt(w);
+	                w = exp >= 0 ? (L >= 0 ? s + "0".repeat(L) : r()) : (pos <= 0 ? "0" + dot + "0".repeat(Math.abs(pos)) + s : r());
+	                L = w.split(dot);
+	                if (L[0] == 0 && L[1] == 0 || (+w == 0 && +s == 0))
+	                    w = 0;
+	                return sign + w;
+	                function r() { return w.replace(new RegExp(`^(.{${pos}})(.)`), `$1${dot}$2`); }
+	            }
+	            setTimeout(() => {
+	                const ax = document.getElementById('ax');
+	                ax.value = eToNumber(this.uniforms.uniforms['shape'].value['aX']);
+	                ax.onchange = () => {
+	                    console.log('before', this.uniforms.uniforms['shape'].value['aX']);
+	                    this.uniforms.uniforms['shape'].value['aX'] = parseFloat(ax.value.replace(',', '.'));
+	                    console.log('after', this.uniforms.uniforms['shape'].value['aX']);
+	                };
+	                const bx = document.getElementById('bx');
+	                bx.value = this.uniforms.uniforms['shape'].value['bX'];
+	            }, 1000);
 	        }
 	    }
 	    setProvider(provider) {
