@@ -469,32 +469,65 @@
 	    },
 	};
 
+	const editLines$1 = (code, editor) => {
+	    const lines = code.split('\n');
+	    editor(lines);
+	    const result = lines.join('\n');
+	    return result;
+	};
 	const xd = (renderer) => {
-	    var scene = new THREE__namespace.Scene();
 	    var camera = new THREE__namespace.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
 	    var bufferScene = new THREE__namespace.Scene();
+	    bufferScene.background = new THREE__namespace.Color('white');
 	    var bufferTexture = new THREE__namespace.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: THREE__namespace.LinearFilter, magFilter: THREE__namespace.NearestFilter });
 	    var redMaterial = new THREE__namespace.MeshBasicMaterial({ color: 0xF06565 });
 	    var boxGeometry = new THREE__namespace.BoxGeometry(5, 5, 5);
 	    var boxObject = new THREE__namespace.Mesh(boxGeometry, redMaterial);
 	    boxObject.position.z = -10;
-	    bufferScene.add(boxObject);
 	    var blueMaterial = new THREE__namespace.MeshBasicMaterial({ color: 0x7074FF });
 	    var plane = new THREE__namespace.PlaneBufferGeometry(window.innerWidth, window.innerHeight);
 	    var planeObject = new THREE__namespace.Mesh(plane, blueMaterial);
 	    planeObject.position.z = -15;
-	    bufferScene.add(planeObject);
 	    var boxMaterial = new THREE__namespace.MeshBasicMaterial({ map: bufferTexture.texture });
-	    var boxGeometry2 = new THREE__namespace.BoxGeometry(5, 5, 5);
-	    var mainBoxObject = new THREE__namespace.Mesh(boxGeometry2, boxMaterial);
-	    mainBoxObject.position.z = -10;
-	    scene.add(mainBoxObject);
+	    const geometry = new THREE__namespace.BufferGeometry();
+	    const vertices = new Float32Array([
+	        -1.0, -1.0, 0.0,
+	        1.0, -1.0, 0.0,
+	        1.0, 1.0, 0.0,
+	        1.0, 1.0, 0.0,
+	        -1.0, 1.0, 0.0,
+	        -1.0, -1.0, 0.0
+	    ]);
+	    geometry.setAttribute('position', new THREE__namespace.BufferAttribute(vertices, 3));
+	    const material = new THREE__namespace.MeshBasicMaterial({ color: 0xff0000 });
+	    material.onBeforeCompile = shader => {
+	        const varryingDeclarations = [
+	            'varying float vColor;'
+	        ];
+	        shader.vertexShader = editLines$1(shader.vertexShader, lines => {
+	            lines.splice(0, 0, [
+	                ...varryingDeclarations,
+	            ].join('\n'));
+	            lines.splice(lines.length - 1, 0, `
+            vColor = position.x;
+            gl_Position = vec4(position, 1.0);
+        `);
+	        });
+	        shader.fragmentShader = editLines$1(shader.fragmentShader, lines => {
+	            lines.splice(0, 0, [
+	                ...varryingDeclarations,
+	            ].join('\n'));
+	            lines.splice(lines.length - 1, 0, `
+            gl_FragColor = vec4(vColor, vColor, vColor, 1.0);
+        `);
+	        });
+	    };
+	    const mesh = new THREE__namespace.Mesh(geometry, material);
+	    bufferScene.add(mesh);
 	    function render() {
 	        requestAnimationFrame(render);
 	        boxObject.rotation.y += 0.01;
 	        boxObject.rotation.x += 0.01;
-	        mainBoxObject.rotation.y += 0.01;
-	        mainBoxObject.rotation.x += 0.01;
 	        const target = renderer.getRenderTarget();
 	        renderer.setRenderTarget(bufferTexture);
 	        renderer.render(bufferScene, camera);
@@ -570,7 +603,8 @@
 				float scale = 0.0000001;
 				float qqqq = (vWorldPosition.x + vWorldPosition.y + vWorldPosition.z) * 0.0000001;
 				vec2 worldTexel = vec2(vWorldPosition.x * scale, vWorldPosition.z * scale);
-				gl_FragColor = mix(gl_FragColor, texture2D(tSec, worldTexel), 0.5);
+				// gl_FragColor = mix(gl_FragColor, texture2D(tSec, worldTexel), 0.5);
+				gl_FragColor = mix(gl_FragColor, texture2D(tSec, worldTexel), 1.0);
 			`);
 	        });
 	        uniforms.addShader(shader);
