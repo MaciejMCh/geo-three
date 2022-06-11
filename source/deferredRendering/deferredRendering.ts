@@ -25,7 +25,7 @@ export const xd = (renderer: THREE.WebGLRenderer) => {
     ///////////////////This is where we create our off-screen render target
     //Create a different scene to hold our buffer objects
     var bufferScene = new THREE.Scene();
-    bufferScene.background = new THREE.Color('white');
+    bufferScene.background = new THREE.Color('green');
     //Create the texture that will store our result
     var bufferTexture = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
 
@@ -59,9 +59,9 @@ export const xd = (renderer: THREE.WebGLRenderer) => {
 // create a simple square shape. We duplicate the top left and bottom right
 // vertices because each vertex needs to appear once per triangle.
 const vertices = new Float32Array( [
-	-1.0, -1.0,  0.0,
-	 1.0, -1.0,  0.0,
-	 1.0,  1.0,  0.0,
+	// -1.0, -1.0,  0.0,
+	//  1.0, -1.0,  0.0,
+	//  1.0,  1.0,  0.0,
 
 	 1.0,  1.0,  0.0,
 	-1.0,  1.0,  0.0,

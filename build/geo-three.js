@@ -478,7 +478,7 @@
 	const xd = (renderer) => {
 	    var camera = new THREE__namespace.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
 	    var bufferScene = new THREE__namespace.Scene();
-	    bufferScene.background = new THREE__namespace.Color('white');
+	    bufferScene.background = new THREE__namespace.Color('green');
 	    var bufferTexture = new THREE__namespace.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: THREE__namespace.LinearFilter, magFilter: THREE__namespace.NearestFilter });
 	    var redMaterial = new THREE__namespace.MeshBasicMaterial({ color: 0xF06565 });
 	    var boxGeometry = new THREE__namespace.BoxGeometry(5, 5, 5);
@@ -491,9 +491,6 @@
 	    var boxMaterial = new THREE__namespace.MeshBasicMaterial({ map: bufferTexture.texture });
 	    const geometry = new THREE__namespace.BufferGeometry();
 	    const vertices = new Float32Array([
-	        -1.0, -1.0, 0.0,
-	        1.0, -1.0, 0.0,
-	        1.0, 1.0, 0.0,
 	        1.0, 1.0, 0.0,
 	        -1.0, 1.0, 0.0,
 	        -1.0, -1.0, 0.0
@@ -1413,10 +1410,16 @@
 	    }
 	    get worldPosition() {
 	        if (!this._worldPosition) {
-	            var coords = UnitsUtils.datumsToSpherical(this.latitude, this.longitude);
+	            const coords = UnitsUtils.datumsToSpherical(this.latitude, this.longitude);
 	            this._worldPosition = new THREE.Vector3(coords.x, 0, -coords.y);
 	        }
 	        return this._worldPosition;
+	    }
+	    get worldTexel() {
+	        if (!this._worldTexel) {
+	            this._worldTexel = new THREE.Vector2(this._worldPosition.x, this.worldPosition.z);
+	        }
+	        return this._worldTexel;
 	    }
 	}
 
@@ -1487,11 +1490,27 @@
 	    }
 	}
 
-	const wordSpaceTexelFunction = (lower, upper) => {
-	    const diff = lower - upper;
+	const wordSpaceTexelFunction = (numberSpace) => {
+	    const diff = numberSpace.min - numberSpace.max;
 	    const a = -1 / diff;
-	    const b = lower / diff;
+	    const b = numberSpace.min / diff;
 	    return { a, b };
+	};
+
+	const numberSpace = {
+	    frame: { min: -1, max: 1 },
+	    geometryWorldTexels: (vertices) => {
+	        const worldSpaceTexelsXs = vertices.map(vertex => vertex.worldTexel.x);
+	        const worldSpaceTexelsYs = vertices.map(vertex => vertex.worldTexel.y);
+	        const minX = Math.min(...worldSpaceTexelsXs);
+	        const maxX = Math.max(...worldSpaceTexelsXs);
+	        const minY = Math.min(...worldSpaceTexelsYs);
+	        const maxY = Math.max(...worldSpaceTexelsYs);
+	        return {
+	            x: { min: minX, max: maxX },
+	            y: { min: minY, max: maxY },
+	        };
+	    },
 	};
 
 	class MapView extends THREE.Mesh {
@@ -1531,20 +1550,19 @@
 	            this.root.mapView = this;
 	            this.add(this.root);
 	            setTimeout(() => {
-	                const identity1 = this.uniforms.create.circle();
-	                const identity2 = this.uniforms.create.circle();
-	                this.uniforms.update.circle.radius(identity1, 10000);
-	                this.uniforms.update.circle.geoposition(identity1, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
-	                this.uniforms.update.circle.radius(identity2, 5000);
-	                this.uniforms.update.circle.geoposition(identity2, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
-	                setTimeout(() => {
-	                    this.uniforms.remove.circle(identity2);
-	                }, 1000);
-	            }, 3000);
-	            setTimeout(() => {
-	                const corner = new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }).worldPosition;
-	                const xFunc = wordSpaceTexelFunction(corner.x, corner.x - 1000);
-	                const yFunc = wordSpaceTexelFunction(corner.z, corner.z - 1000);
+	                const vertices = [
+	                    new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
+	                    new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
+	                    new Geoposition({ longitude: 58.254998864, latitude: 23.558330976 }),
+	                ];
+	                vertices.forEach(vertex => {
+	                    const identity = this.uniforms.create.circle();
+	                    this.uniforms.update.circle.radius(identity, 200);
+	                    this.uniforms.update.circle.geoposition(identity, vertex);
+	                });
+	                const geometryWorldTexelSpaces = numberSpace.geometryWorldTexels(vertices);
+	                const xFunc = wordSpaceTexelFunction(geometryWorldTexelSpaces.x);
+	                const yFunc = wordSpaceTexelFunction(geometryWorldTexelSpaces.y);
 	                this.uniforms.uniforms['shape'] = new THREE.Uniform({
 	                    aX: xFunc.a,
 	                    bX: xFunc.b,

@@ -1,11 +1,13 @@
+import { NumberSpace } from './LinearTransform';
+
 export type LinearFunction = {
     a: number;
     b: number;
 };
 
-export const wordSpaceTexelFunction = (lower: number, upper: number): LinearFunction => {
-    const diff = lower - upper;
+export const wordSpaceTexelFunction = (numberSpace: NumberSpace): LinearFunction => {
+    const diff = numberSpace.min - numberSpace.max;
     const a = -1 / diff;
-    const b = lower / diff;
+    const b = numberSpace.min / diff;
     return { a, b };
 };

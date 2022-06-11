@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { Vector2, Vector3 } from 'three';
 import { UnitsUtils } from '../../utils/UnitsUtils';
 
 export class Geoposition {
@@ -8,13 +8,23 @@ export class Geoposition {
 
     private _worldPosition: Vector3;
 
+    private _worldTexel: Vector2;
+
     get worldPosition() {
         if (!this._worldPosition) {
-            var coords = UnitsUtils.datumsToSpherical(this.latitude, this.longitude);
+            const coords = UnitsUtils.datumsToSpherical(this.latitude, this.longitude);
             this._worldPosition = new Vector3(coords.x, 0, -coords.y);
         }
 
         return this._worldPosition;
+    }
+
+    get worldTexel() {
+        if (!this._worldTexel) {
+            this._worldTexel = new Vector2(this._worldPosition.x, this.worldPosition.z);
+        }
+
+        return this._worldTexel;
     }
 
     constructor(args: {

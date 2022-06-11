@@ -13,6 +13,7 @@ import { Geoposition } from './nodes/primitive';
 import { ShaderUniforms } from './uniforms';
 import { xd } from './deferredRendering/deferredRendering';
 import { wordSpaceTexelFunction } from './utils/LinearFunction';
+import { numberSpace } from './utils/LinearTransform';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -160,21 +161,21 @@ export class MapView extends Mesh
 			this.add(this.root);
 
 			setTimeout(() => {
-				const identity1 = this.uniforms.create.circle();
-				const identity2 = this.uniforms.create.circle();
-				this.uniforms.update.circle.radius(identity1, 10000);
-				this.uniforms.update.circle.geoposition(identity1, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
-				this.uniforms.update.circle.radius(identity2, 5000);
-				this.uniforms.update.circle.geoposition(identity2, new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }));
-				setTimeout(() => {
-					this.uniforms.remove.circle(identity2); // remove smaller;
-				}, 1000);
-			}, 3000);
+				const vertices = [
+					new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
+					new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
+					new Geoposition({ longitude: 58.254998864, latitude: 23.558330976 }),
+				];
 
-			setTimeout(() => {
-				const corner = new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }).worldPosition;
-				const xFunc = wordSpaceTexelFunction(corner.x, corner.x - 1000);
-				const yFunc = wordSpaceTexelFunction(corner.z, corner.z - 1000);
+				vertices.forEach(vertex => {
+					const identity = this.uniforms.create.circle();
+					this.uniforms.update.circle.radius(identity, 200);
+					this.uniforms.update.circle.geoposition(identity, vertex);
+				});
+
+				const geometryWorldTexelSpaces = numberSpace.geometryWorldTexels(vertices);
+				const xFunc = wordSpaceTexelFunction(geometryWorldTexelSpaces.x);
+				const yFunc = wordSpaceTexelFunction(geometryWorldTexelSpaces.y);
 				this.uniforms.uniforms['shape'] = new Uniform({
 					aX: xFunc.a,
 					bX: xFunc.b,
@@ -182,6 +183,18 @@ export class MapView extends Mesh
 					bY: yFunc.b,
 				});
 			}, 1000);
+
+			// setTimeout(() => {
+			// 	const corner = new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }).worldPosition;
+			// 	const xFunc = wordSpaceTexelFunction(corner.x, corner.x - 1000);
+			// 	const yFunc = wordSpaceTexelFunction(corner.z, corner.z - 1000);
+			// 	this.uniforms.uniforms['shape'] = new Uniform({
+			// 		aX: xFunc.a,
+			// 		bX: xFunc.b,
+			// 		aY: yFunc.a,
+			// 		bY: yFunc.b,
+			// 	});
+			// }, 1000);
 		}
 	}
 
