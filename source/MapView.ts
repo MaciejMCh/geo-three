@@ -1,4 +1,4 @@
-import {BufferGeometry, Camera, Group, Material, Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene, WebGLRenderer} from 'three';
+import {BufferGeometry, Camera, Group, Material, Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene, Uniform, WebGLRenderer} from 'three';
 import {OpenStreetMapsProvider} from './providers/OpenStreetMapsProvider';
 import {MapNode} from './nodes/MapNode';
 import {MapHeightNode} from './nodes/MapHeightNode';
@@ -12,6 +12,7 @@ import {MapMartiniHeightNode} from './nodes/MapMartiniHeightNode';
 import { Geoposition } from './nodes/primitive';
 import { ShaderUniforms } from './uniforms';
 import { xd } from './deferredRendering/deferredRendering';
+import { wordSpaceTexelFunction } from './utils/LinearFunction';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -170,39 +171,17 @@ export class MapView extends Mesh
 				}, 1000);
 			}, 3000);
 
-			function eToNumber(num) {
-				let sign = "";
-				(num += "").charAt(0) == "-" && (num = num.substring(1), sign = "-");
-				let arr = num.split(/[e]/ig);
-				if (arr.length < 2) return sign + num;
-				let dot = (.1).toLocaleString().substr(1, 1), n = arr[0], exp = +arr[1],
-					w = (n = n.replace(/^0+/, '')).replace(dot, ''),
-				  pos = n.split(dot)[1] ? n.indexOf(dot) + exp : w.length + exp,
-				  L   = pos - w.length, s = "" + BigInt(w);
-				  w   = exp >= 0 ? (L >= 0 ? s + "0".repeat(L) : r()) : (pos <= 0 ? "0" + dot + "0".repeat(Math.abs(pos)) + s : r());
-				L= w.split(dot); if (L[0]==0 && L[1]==0 || (+w==0 && +s==0) ) w = 0; //** added 9/10/2021
-				return sign + w;
-				function r() {return w.replace(new RegExp(`^(.{${pos}})(.)`), `$1${dot}$2`)}
-			  }
-
 			setTimeout(() => {
-				const ax = document.getElementById('ax') as HTMLInputElement;
-				ax.value = eToNumber(this.uniforms.uniforms['shape'].value['aX']);
-				ax.onchange = () => {
-					console.log('before', this.uniforms.uniforms['shape'].value['aX']);
-					this.uniforms.uniforms['shape'].value['aX'] = parseFloat(ax.value.replace(',', '.'));
-					console.log('after', this.uniforms.uniforms['shape'].value['aX']);
-				};
-
-				const bx = document.getElementById('bx') as HTMLInputElement;
-				bx.value = this.uniforms.uniforms['shape'].value['bX'];
+				const corner = new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }).worldPosition;
+				const xFunc = wordSpaceTexelFunction(corner.x, corner.x - 1000);
+				const yFunc = wordSpaceTexelFunction(corner.z, corner.z - 1000);
+				this.uniforms.uniforms['shape'] = new Uniform({
+					aX: xFunc.a,
+					bX: xFunc.b,
+					aY: yFunc.a,
+					bY: yFunc.b,
+				});
 			}, 1000);
-			
-
-			// setTimeout(() => {
-			// 	const { bufferTexture } = xd();
-			// 	bufferTexture.texture.name = 'deferred';
-			// }, 1000);
 		}
 	}
 

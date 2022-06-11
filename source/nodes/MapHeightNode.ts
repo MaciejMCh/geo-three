@@ -9,6 +9,7 @@ import {CanvasUtils} from '../utils/CanvasUtils';
 import { constants } from '../uniforms/constants';
 import { ShaderUniforms } from '../uniforms';
 import { xd } from '../deferredRendering/deferredRendering';
+import { wordSpaceTexelFunction } from '../utils/LinearFunction';
 
 var xdMap!: Texture;
 
@@ -109,12 +110,6 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 
 		uniforms.addShader(shader);
 		shader.uniforms['tSec'] = new Uniform(getMap(renderer));
-		shader.uniforms['shape'] = new Uniform({
-			aX: 0.0000001,
-			bX: 0.0,
-			aY: 0.0000001,
-			bY: 0.0,
-		});
 	};
 
 	return phongMaterial;
