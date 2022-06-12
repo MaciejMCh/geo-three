@@ -525,7 +525,7 @@
 					vec4 shapesColor(LinearTransform2d worldToFrameTransform, vec3 worldPosition, sampler2D bufferSampler) {
 						vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), worldToFrameTransform);
 						if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
-							return vec4(1.0, 0.0, 1.0, 0.5);
+							//return vec4(1.0, 0.0, 1.0, 0.5);
 							return texture2D(bufferSampler, worldTexel);
 						} else {
 							return vec4(0.0, 0.0, 0.0, 0.0);
@@ -1397,6 +1397,13 @@
 	        };
 	    },
 	};
+	const transform = {
+	    vertices: (vertices, from, to) => vertices
+	        .map(vertex => ({
+	        x: from.x.convert(vertex.worldTexel.x, to.x),
+	        y: from.y.convert(vertex.worldTexel.y, to.y),
+	    })),
+	};
 
 	class MapView extends three.Mesh {
 	    constructor(renderEnviroment, renderer, root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
@@ -1439,7 +1446,7 @@
 	                const vertices = [
 	                    new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
 	                    new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
-	                    new Geoposition({ longitude: 58.254998864, latitude: 23.558330976 }),
+	                    new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
 	                ];
 	                vertices.forEach(vertex => {
 	                    const identity = this.renderEnviroment.shaderUniforms.create.circle();
@@ -1450,7 +1457,7 @@
 	                const xFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.x);
 	                const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
 	                const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
-	                this.renderEnviroment.setupShapes(shapesTexelWorldTransform);
+	                this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform, vertices);
 	            }, 1000);
 	        }
 	    }
@@ -2002,13 +2009,33 @@
 	    animate();
 	};
 
+	class PolygonGeometry {
+	    constructor(vertices, geometryTexelWorldSpace, worldToFrameTransform) {
+	        this.vertices = vertices;
+	        this.geometryTexelWorldSpace = geometryTexelWorldSpace;
+	        this.worldToFrameTransform = worldToFrameTransform;
+	    }
+	    get shapeGeometry() {
+	        if (!this._shapeGeometry) {
+	            const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	            const coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(-vertex.x, -vertex.y));
+	            console.log('coords', coordinatesList);
+	            this._shapeGeometry = new three.ShapeBufferGeometry(new three.Shape(coordinatesList));
+	        }
+	        return this._shapeGeometry;
+	    }
+	}
+
 	class RenderEnviroment {
 	    constructor(webGlRenderer, deferredRenderer, shaderUniforms) {
 	        this.webGlRenderer = webGlRenderer;
 	        this.deferredRenderer = deferredRenderer;
 	        this.shaderUniforms = shaderUniforms;
-	        this.setupShapes = (texelWorldTransform) => {
+	        this.setupShapes = (texelWorldSpace, texelWorldTransform, vertices) => {
 	            this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
+	            const shape = this.deferredRenderer.shapes.makeShape();
+	            this.shaderUniforms.update.shapes.bufferTexture(shape.bufferSampler);
+	            shape.updateGeometry(new PolygonGeometry(vertices, texelWorldSpace, texelWorldTransform).shapeGeometry);
 	        };
 	    }
 	}
@@ -2020,6 +2047,7 @@
 	        this.camera = camera;
 	        this.mesh = mesh;
 	        this.updateGeometry = (geometry) => {
+	            console.log('update geometry', geometry);
 	            this.mesh.geometry = geometry;
 	        };
 	        this.render = (webglRenderer) => {
@@ -2033,7 +2061,7 @@
 	    }
 	}
 	Shape.make = () => {
-	    var camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
+	    var camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
 	    var bufferScene = new three.Scene();
 	    bufferScene.background = new three.Color('green');
 	    var bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
@@ -2055,26 +2083,16 @@
 	    geometry.setAttribute('position', new three.BufferAttribute(vertices, 3));
 	    const material = new three.MeshBasicMaterial({ color: 0xff0000 });
 	    material.onBeforeCompile = shader => {
-	        const varryingDeclarations = [
-	            'varying float vColor;'
-	        ];
-	        shader.vertexShader = editLines(shader.vertexShader, lines => {
-	            lines.splice(0, 0, [
-	                ...varryingDeclarations,
-	            ].join('\n'));
-	            lines.splice(lines.length - 1, 0, `
-                    vColor = position.x;
+	        shader.vertexShader = `
+                void main() {
                     gl_Position = vec4(position, 1.0);
-                `);
-	        });
-	        shader.fragmentShader = editLines(shader.fragmentShader, lines => {
-	            lines.splice(0, 0, [
-	                ...varryingDeclarations,
-	            ].join('\n'));
-	            lines.splice(lines.length - 1, 0, `
-                    gl_FragColor = vec4(vColor, vColor, vColor, 1.0);
-                `);
-	        });
+                }
+            `;
+	        shader.fragmentShader = `
+                void main() {
+                    gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
+                }
+            `;
 	    };
 	    const mesh = new three.Mesh(geometry, material);
 	    bufferScene.add(mesh);

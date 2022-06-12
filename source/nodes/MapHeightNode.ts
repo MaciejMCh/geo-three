@@ -91,7 +91,7 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 					vec4 shapesColor(LinearTransform2d worldToFrameTransform, vec3 worldPosition, sampler2D bufferSampler) {
 						vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), worldToFrameTransform);
 						if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
-							return vec4(1.0, 0.0, 1.0, 0.5);
+							//return vec4(1.0, 0.0, 1.0, 0.5);
 							return texture2D(bufferSampler, worldTexel);
 						} else {
 							return vec4(0.0, 0.0, 0.0, 0.0);

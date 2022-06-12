@@ -164,7 +164,7 @@ export class MapView extends Mesh
 				const vertices = [
 					new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
 					new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
-					new Geoposition({ longitude: 58.254998864, latitude: 23.558330976 }),
+					new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
 				];
 
 				vertices.forEach(vertex => {
@@ -211,7 +211,7 @@ export class MapView extends Mesh
 				const xFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.x);
 				const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
 				const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
-				this.renderEnviroment.setupShapes(shapesTexelWorldTransform);
+				this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform, vertices);
 			}, 1000);
 		}
 	}

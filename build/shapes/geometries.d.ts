@@ -8,11 +8,9 @@ export interface Geometry {
 }
 export declare class PolygonGeometry implements Geometry {
     private vertices;
-    private _geometryTexelWorldSpace;
-    private _worldToFrameTransform;
+    private readonly geometryTexelWorldSpace;
+    readonly worldToFrameTransform: LinearTransform2d;
     private _shapeGeometry;
-    get geometryTexelWorldSpace(): LinearSpace2d;
-    get worldToFrameTransform(): LinearTransform2d;
     get shapeGeometry(): ShapeBufferGeometry;
-    constructor(vertices: Geoposition[]);
+    constructor(vertices: Geoposition[], geometryTexelWorldSpace: LinearSpace2d, worldToFrameTransform: LinearTransform2d);
 }

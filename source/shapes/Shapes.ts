@@ -1,4 +1,4 @@
-import { BoxGeometry, BufferAttribute, BufferGeometry, Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, PlaneBufferGeometry, Scene, ShapeBufferGeometry, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { BoxGeometry, BufferAttribute, BufferGeometry, Camera, Color, DoubleSide, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, PlaneBufferGeometry, Scene, ShapeBufferGeometry, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { editLines } from '../utils/shderEditor';
 
 export class Shape {
@@ -14,7 +14,7 @@ export class Shape {
     ) {}
 
     static make = () => {
-        var camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+        var camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.00001, 1000000 );
         var bufferScene = new Scene();
         bufferScene.background = new Color('green');
         var bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
@@ -37,27 +37,17 @@ export class Shape {
         const material = new MeshBasicMaterial( { color: 0xff0000 } );
 
         material.onBeforeCompile = shader => {
-            const varryingDeclarations = [
-                'varying float vColor;'
-            ];
-            shader.vertexShader = editLines(shader.vertexShader, lines => {
-                lines.splice(0, 0, [
-                    ...varryingDeclarations,
-                ].join('\n'));
-                lines.splice(lines.length - 1, 0, `
-                    vColor = position.x;
+            shader.vertexShader = `
+                void main() {
                     gl_Position = vec4(position, 1.0);
-                `);
-            });
+                }
+            `;
 
-            shader.fragmentShader = editLines(shader.fragmentShader, lines => {
-                lines.splice(0, 0, [
-                    ...varryingDeclarations,
-                ].join('\n'));
-                lines.splice(lines.length - 1, 0, `
-                    gl_FragColor = vec4(vColor, vColor, vColor, 1.0);
-                `);
-            });
+            shader.fragmentShader = `
+                void main() {
+                    gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
+                }
+            `;
         };
 
         const mesh = new Mesh( geometry, material );
@@ -70,6 +60,7 @@ export class Shape {
     }
 
     updateGeometry = (geometry: ShapeBufferGeometry) => {
+        console.log('update geometry', geometry);
         this.mesh.geometry = geometry;
     };
 
