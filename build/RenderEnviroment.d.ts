@@ -6,4 +6,5 @@ export declare class RenderEnviroment {
     readonly deferredRenderer: DeferredRenderer;
     readonly shaderUniforms: ShaderUniforms;
     constructor(webGlRenderer: WebGLRenderer, deferredRenderer: DeferredRenderer, shaderUniforms: ShaderUniforms);
+    makeShape: () => void;
 }

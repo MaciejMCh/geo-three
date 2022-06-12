@@ -14,6 +14,7 @@ import { wordSpaceTexelFunction } from './utils/LinearFunction';
 import { numberSpace, transform } from './utils/LinearTransform';
 import { Shapes } from './shapes/Shapes';
 import { RenderEnviroment } from './RenderEnviroment';
+import { PolygonGeometry } from './shapes/geometries';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -172,33 +173,35 @@ export class MapView extends Mesh
 					this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 				});
 
-				const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
-				const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);
-				const yFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.y);
-				const shape = this.renderEnviroment.deferredRenderer.shapes.makeShape();
-				this.renderEnviroment.shaderUniforms.uniforms['shape'] = new Uniform({
-					worldToFrameTransform: {
-						x: {
-							a: xFunc.a,
-							b: xFunc.b,
-						},
-						y: {
-							a: yFunc.a,
-							b: yFunc.b,
-						},
-					},
-					bufferSampler: shape.bufferSampler,
-				});
+				const polygon = this.renderEnviroment.makeShape();
+				polygon.updateGeometry(new PolygonGeometry(vertices));
 
-				console.log('world space texels xd');
-				const frameSpaceVertices = transform.vertices(vertices, geometryTexelWorldSpace, numberSpace.frame2d);
-				console.log(frameSpaceVertices);
+				// const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
+				// const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);
+				// const yFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.y);
+				// const shape = this.renderEnviroment.deferredRenderer.shapes.makeShape();
+				// this.renderEnviroment.shaderUniforms.uniforms['shape'] = new Uniform({
+				// 	worldToFrameTransform: {
+				// 		x: {
+				// 			a: xFunc.a,
+				// 			b: xFunc.b,
+				// 		},
+				// 		y: {
+				// 			a: yFunc.a,
+				// 			b: yFunc.b,
+				// 		},
+				// 	},
+				// 	bufferSampler: shape.bufferSampler,
+				// });
 
-				var coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
-				var geomShape = new ShapeBufferGeometry(new Shape(coordinatesList));
-				shape.updateGeometry(geomShape);
-				console.log(geomShape);
-				// updateDeferredGeometry(geomShape);
+				// console.log('world space texels xd');
+				// const frameSpaceVertices = transform.vertices(vertices, geometryTexelWorldSpace, numberSpace.frame2d);
+				// console.log(frameSpaceVertices);
+
+				// var coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
+				// var geomShape = new ShapeBufferGeometry(new Shape(coordinatesList));
+				// shape.updateGeometry(geomShape);
+				// console.log(geomShape);
 			}, 1000);
 		}
 	}

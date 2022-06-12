@@ -1,5 +1,6 @@
-import { IUniform, Shader, Uniform, Vector3, MathUtils } from 'three';
+import { IUniform, Shader, Uniform, Vector3, MathUtils, Texture } from 'three';
 import { Geoposition } from '../nodes/primitive';
+import { LinearTransform2d } from '../utils/LinearFunction';
 import { constants } from './constants';
 
 type Uniforms =  { [uniform: string]: IUniform<any> };
@@ -9,11 +10,15 @@ export class DrawableIdentity {
 }
 
 export class ShaderUniforms {
-    private circlesCount = 0;
-
     public uniforms!: Uniforms;
 
     private circlesByIds: Record<string, object> = {};
+
+    private circlesCount = 0;
+
+    private shapesByIds: Record<string, object> = {};
+
+    private shapesCount = 0;
 
     create = {
         circle: () => {
@@ -21,6 +26,14 @@ export class ShaderUniforms {
             this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
             this.circlesCount += 1;
             this.uniforms['circlesCount'].value = this.circlesCount;
+            return identity;
+        },
+        shape: (texture: Texture) => {
+            const identity = new DrawableIdentity();
+            this.shapesByIds[identity.raw] = this.uniforms['shapes'].value[this.shapesCount];
+            this.shapesCount += 1;
+            this.uniforms['shapesCount'].value = this.shapesCount;
+            this.uniforms['shapes'].value[this.shapesCount]['bufferSampler'] = texture;
             return identity;
         },
     };
@@ -32,6 +45,20 @@ export class ShaderUniforms {
             },
             radius: (identity: DrawableIdentity, radius: number) => {
                 this.circlesByIds[identity.raw]['radius'] = radius;
+            },
+        },
+        shape: {
+            worldToFrameTransform: (identity: DrawableIdentity, worldToFrameTransform: LinearTransform2d) => {
+                this.shapesByIds[identity.raw]['worldToFrameTransform'] = {
+                    x: {
+                        a: worldToFrameTransform.x.a,
+                        b: worldToFrameTransform.x.b,
+                    },
+                    y: {
+                        a: worldToFrameTransform.y.a,
+                        b: worldToFrameTransform.y.b,
+                    },
+                };
             },
         },
     };
@@ -59,17 +86,21 @@ export class ShaderUniforms {
         shader.uniforms = this.uniforms;
     };
 
-    createCircle = () => {
-
-    };
-
     private setup = (uniforms: Uniforms) => {
         this.setupCircles(uniforms);
+        this.setupShapes(uniforms);
     };
 
     private makeBlankCircle = () => ({
         worldOrigin: new Vector3(),
         radius: 0,
+    });
+
+    private makeBlankShape = () => ({
+        worldToFrameTransform: {
+            x: { a: 0, b: 0 },
+            y: { a: 0, b: 0 },
+        },
     });
 
     private setupCircles = (uniforms: Uniforms) => {
@@ -79,5 +110,14 @@ export class ShaderUniforms {
         }
 		uniforms['circles'] = new Uniform(circles);
         uniforms['circlesCount'] = new Uniform(0);
+    };
+
+    private setupShapes = (uniforms: Uniforms) => {
+        const shapes: object[] = [];
+        for (let index = 0; index < constants.shapes.limit; index++) {
+            shapes.push(this.makeBlankShape());
+        }
+		uniforms['shapes'] = new Uniform(shapes);
+        uniforms['shapesCount'] = new Uniform(0);
     };
 }

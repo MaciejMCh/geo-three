@@ -1,7 +1,7 @@
 import { BoxGeometry, BufferAttribute, BufferGeometry, Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, PlaneBufferGeometry, Scene, ShapeBufferGeometry, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { editLines } from '../utils/shderEditor';
 
-class Shape {
+export class Shape {
     get bufferSampler() {
         return this.bufferTexture.texture;
     }
@@ -92,6 +92,6 @@ export class Shapes {
     render = (webglRenderer: WebGLRenderer) => {
         this.shapes.forEach(shape => {
             shape.render(webglRenderer);
-        })
+        });
     };
 }

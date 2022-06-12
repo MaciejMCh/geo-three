@@ -1,8 +1,14 @@
+import { Line } from 'three';
 import { LinearSpace } from './LinearTransform';
 
 export type LinearFunction = {
     a: number;
     b: number;
+};
+
+export type LinearTransform2d = {
+    x: LinearFunction;
+    y: LinearFunction;
 };
 
 export const wordSpaceTexelFunction = (linearSpace: LinearSpace): LinearFunction => {

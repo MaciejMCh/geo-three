@@ -19,7 +19,7 @@ export class LinearSpace {
     };
 }
 
-type LinearSpace2d = {
+export type LinearSpace2d = {
     x: LinearSpace;
     y: LinearSpace;
 };

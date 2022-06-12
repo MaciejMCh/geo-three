@@ -447,6 +447,9 @@
 	    circles: {
 	        limit: 20,
 	    },
+	    shapes: {
+	        limit: 20,
+	    },
 	};
 
 	const editLines = (code, editor) => {
@@ -1342,55 +1345,6 @@
 	    }
 	}
 
-	const wordSpaceTexelFunction = (linearSpace) => {
-	    const diff = linearSpace.lowerBound - linearSpace.upperBound;
-	    const a = -1 / diff;
-	    const b = linearSpace.lowerBound / diff;
-	    return { a, b };
-	};
-
-	class LinearSpace {
-	    constructor(lowerBound, upperBound) {
-	        this.lowerBound = lowerBound;
-	        this.upperBound = upperBound;
-	        this.convert = (value, to) => {
-	            const progress = (this.upperBound - value) / this.size;
-	            return to.lowerBound + (to.size * progress);
-	        };
-	    }
-	    get size() {
-	        if (this._size === undefined) {
-	            this._size = this.upperBound - this.lowerBound;
-	        }
-	        return this._size;
-	    }
-	}
-	const frameNumberSpace = new LinearSpace(-1, 1);
-	const frameNumberSpace2d = { x: frameNumberSpace, y: frameNumberSpace };
-	const numberSpace = {
-	    frame: frameNumberSpace,
-	    frame2d: frameNumberSpace2d,
-	    geometryWorldTexels: (vertices) => {
-	        const worldSpaceTexelsXs = vertices.map(vertex => vertex.worldTexel.x);
-	        const worldSpaceTexelsYs = vertices.map(vertex => vertex.worldTexel.y);
-	        const minX = Math.min(...worldSpaceTexelsXs);
-	        const maxX = Math.max(...worldSpaceTexelsXs);
-	        const minY = Math.min(...worldSpaceTexelsYs);
-	        const maxY = Math.max(...worldSpaceTexelsYs);
-	        return {
-	            x: new LinearSpace(minX, maxX),
-	            y: new LinearSpace(minY, maxY),
-	        };
-	    },
-	};
-	const transform = {
-	    vertices: (vertices, from, to) => vertices
-	        .map(vertex => ({
-	        x: from.x.convert(vertex.worldTexel.x, to.x),
-	        y: from.y.convert(vertex.worldTexel.y, to.y),
-	    })),
-	};
-
 	class MapView extends three.Mesh {
 	    constructor(renderEnviroment, renderer, root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
 	        super(undefined, new three.MeshBasicMaterial({ transparent: true, opacity: 0.0 }));
@@ -1439,30 +1393,8 @@
 	                    this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
 	                    this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 	                });
-	                const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
-	                const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);
-	                const yFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.y);
-	                const shape = this.renderEnviroment.deferredRenderer.shapes.makeShape();
-	                this.renderEnviroment.shaderUniforms.uniforms['shape'] = new three.Uniform({
-	                    worldToFrameTransform: {
-	                        x: {
-	                            a: xFunc.a,
-	                            b: xFunc.b,
-	                        },
-	                        y: {
-	                            a: yFunc.a,
-	                            b: yFunc.b,
-	                        },
-	                    },
-	                    bufferSampler: shape.bufferSampler,
-	                });
-	                console.log('world space texels xd');
-	                const frameSpaceVertices = transform.vertices(vertices, geometryTexelWorldSpace, numberSpace.frame2d);
-	                console.log(frameSpaceVertices);
-	                var coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(vertex.x, vertex.y));
-	                var geomShape = new three.ShapeBufferGeometry(new three.Shape(coordinatesList));
-	                shape.updateGeometry(geomShape);
-	                console.log(geomShape);
+	                const polygon = this.renderEnviroment.makeShape();
+	                polygon.updateGeometry(geometry.make.polygon(vertices));
 	            }, 1000);
 	        }
 	    }
@@ -2019,6 +1951,9 @@
 	        this.webGlRenderer = webGlRenderer;
 	        this.deferredRenderer = deferredRenderer;
 	        this.shaderUniforms = shaderUniforms;
+	        this.makeShape = () => {
+	            this.shaderUniforms.create.shape();
+	        };
 	    }
 	}
 
@@ -2123,14 +2058,24 @@
 	}
 	class ShaderUniforms {
 	    constructor() {
-	        this.circlesCount = 0;
 	        this.circlesByIds = {};
+	        this.circlesCount = 0;
+	        this.shapesByIds = {};
+	        this.shapesCount = 0;
 	        this.create = {
 	            circle: () => {
 	                const identity = new DrawableIdentity();
 	                this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
 	                this.circlesCount += 1;
 	                this.uniforms['circlesCount'].value = this.circlesCount;
+	                return identity;
+	            },
+	            shape: (texture) => {
+	                const identity = new DrawableIdentity();
+	                this.shapesByIds[identity.raw] = this.uniforms['shapes'].value[this.shapesCount];
+	                this.shapesCount += 1;
+	                this.uniforms['shapesCount'].value = this.shapesCount;
+	                this.uniforms['shapes'].value[this.shapesCount]['bufferSampler'] = texture;
 	                return identity;
 	            },
 	        };
@@ -2141,6 +2086,11 @@
 	                },
 	                radius: (identity, radius) => {
 	                    this.circlesByIds[identity.raw]['radius'] = radius;
+	                },
+	            },
+	            shape: {
+	                worldToFrameTransform: (identity, worldToFrameTransform) => {
+	                    this.shapesByIds[identity.raw]['worldToFrameTransform'] = worldToFrameTransform;
 	                },
 	            },
 	        };
@@ -2167,11 +2117,13 @@
 	        };
 	        this.setup = (uniforms) => {
 	            this.setupCircles(uniforms);
+	            this.setupShapes(uniforms);
 	        };
 	        this.makeBlankCircle = () => ({
 	            worldOrigin: new three.Vector3(),
 	            radius: 0,
 	        });
+	        this.makeBlankShape = () => ({});
 	        this.setupCircles = (uniforms) => {
 	            const circles = [];
 	            for (let index = 0; index < constants.circles.limit; index++) {
@@ -2179,6 +2131,14 @@
 	            }
 	            uniforms['circles'] = new three.Uniform(circles);
 	            uniforms['circlesCount'] = new three.Uniform(0);
+	        };
+	        this.setupShapes = (uniforms) => {
+	            const shapes = [];
+	            for (let index = 0; index < constants.shapes.limit; index++) {
+	                shapes.push(this.makeBlankShape());
+	            }
+	            uniforms['shapes'] = new three.Uniform(shapes);
+	            uniforms['shapesCount'] = new three.Uniform(0);
 	        };
 	    }
 	}

@@ -100,16 +100,19 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 				`,
 				`uniform Circle circles[${constants.circles.limit}];`,
 				'uniform int circlesCount;',
-				'uniform Shape shape;'
+				`uniform Shape shapes[${constants.shapes.limit}];`,
 			].join('\n'));
 
 			lines.splice(lines.length - 1, 0, `
+				for (int i = 0; i <= shapesCount; i++) {
+					vec4 shapeColor = shapeColor(shapes[i], vWorldPosition);
+					gl_FragColor = mix(gl_FragColor, shapeColor, shapeColor.a);
+				}
+
 				for (int i = 0; i <= circlesCount; i++) {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
-				vec4 shapeColor = shapeColor(shape, vWorldPosition);
-				gl_FragColor = mix(gl_FragColor, shapeColor, shapeColor.a);
 			`);
 		});
 
