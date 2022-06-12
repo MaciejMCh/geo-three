@@ -1,13 +1,37 @@
-import { Geoposition } from "../nodes/primitive";
+import { Geoposition } from '../nodes/primitive';
 
-export type NumberSpace = {
-    min: number;
-    max: number;
+export class LinearSpace {
+    private _size?: number;
+
+    get size() {
+        if (this._size === undefined) {
+            this._size = this.upperBound - this.lowerBound;
+        }
+
+        return this._size;
+    }
+
+    constructor(public readonly lowerBound: number, public readonly upperBound: number) {}
+
+    convert = (value: number, to: LinearSpace) => {
+        const progress = (this.upperBound - value) / this.size;
+        return to.lowerBound + (to.size * progress);
+    };
+}
+
+type LinearSpace2d = {
+    x: LinearSpace;
+    y: LinearSpace;
 };
 
+const frameNumberSpace: LinearSpace = new LinearSpace(-1, 1);
+
+const frameNumberSpace2d: LinearSpace2d = { x: frameNumberSpace, y: frameNumberSpace };
+
 export const numberSpace = {
-    frame: { min: -1, max: 1 } as NumberSpace,
-    geometryWorldTexels: (vertices: Geoposition[]): { x: NumberSpace; y: NumberSpace } => {
+    frame: frameNumberSpace,
+    frame2d: frameNumberSpace2d,
+    geometryWorldTexels: (vertices: Geoposition[]): LinearSpace2d => {
         const worldSpaceTexelsXs = vertices.map(vertex => vertex.worldTexel.x);
         const worldSpaceTexelsYs = vertices.map(vertex => vertex.worldTexel.y);
         const minX = Math.min(...worldSpaceTexelsXs);
@@ -16,8 +40,16 @@ export const numberSpace = {
         const maxY = Math.max(...worldSpaceTexelsYs);
         
         return {
-            x: { min: minX, max: maxX },
-            y: { min: minY, max: maxY },
+            x: new LinearSpace(minX, maxX),
+            y: new LinearSpace(minY, maxY),
         };
     },
+};
+
+export const transform = {
+    vertices: (vertices: Geoposition[], from: LinearSpace2d, to: LinearSpace2d) => vertices
+        .map(vertex => ({
+            x: from.x.convert(vertex.worldTexel.x, to.x),
+            y: from.y.convert(vertex.worldTexel.y, to.y),
+        })),
 };

@@ -1,4 +1,4 @@
-import {BufferGeometry, Camera, Group, Material, Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene, Uniform, WebGLRenderer} from 'three';
+import {BufferGeometry, Camera, ExtrudeGeometry, Group, Material, Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene, Shape, ShapeBufferGeometry, Uniform, Vector2, Vector3, WebGLRenderer} from 'three';
 import {OpenStreetMapsProvider} from './providers/OpenStreetMapsProvider';
 import {MapNode} from './nodes/MapNode';
 import {MapHeightNode} from './nodes/MapHeightNode';
@@ -13,7 +13,7 @@ import { Geoposition } from './nodes/primitive';
 import { ShaderUniforms } from './uniforms';
 import { xd } from './deferredRendering/deferredRendering';
 import { wordSpaceTexelFunction } from './utils/LinearFunction';
-import { numberSpace } from './utils/LinearTransform';
+import { numberSpace, transform } from './utils/LinearTransform';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -161,6 +161,7 @@ export class MapView extends Mesh
 			this.add(this.root);
 
 			setTimeout(() => {
+				console.log('begin');
 				const vertices = [
 					new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
 					new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
@@ -173,28 +174,24 @@ export class MapView extends Mesh
 					this.uniforms.update.circle.geoposition(identity, vertex);
 				});
 
-				const geometryWorldTexelSpaces = numberSpace.geometryWorldTexels(vertices);
-				const xFunc = wordSpaceTexelFunction(geometryWorldTexelSpaces.x);
-				const yFunc = wordSpaceTexelFunction(geometryWorldTexelSpaces.y);
+				const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
+				const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);
+				const yFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.y);
 				this.uniforms.uniforms['shape'] = new Uniform({
 					aX: xFunc.a,
 					bX: xFunc.b,
 					aY: yFunc.a,
 					bY: yFunc.b,
 				});
-			}, 1000);
 
-			// setTimeout(() => {
-			// 	const corner = new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }).worldPosition;
-			// 	const xFunc = wordSpaceTexelFunction(corner.x, corner.x - 1000);
-			// 	const yFunc = wordSpaceTexelFunction(corner.z, corner.z - 1000);
-			// 	this.uniforms.uniforms['shape'] = new Uniform({
-			// 		aX: xFunc.a,
-			// 		bX: xFunc.b,
-			// 		aY: yFunc.a,
-			// 		bY: yFunc.b,
-			// 	});
-			// }, 1000);
+				console.log('world space texels xd');
+				// const frameSpaceVertices = transform.vertices(vertices, geometryTexelWorldSpace, numberSpace.frame2d);
+				// console.log(frameSpaceVertices);
+
+				// var coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
+				// var geomShape = new ShapeBufferGeometry(new Shape(coordinatesList));
+				// console.log(geomShape);
+			}, 1000);
 		}
 	}
 

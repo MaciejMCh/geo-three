@@ -1490,15 +1490,34 @@
 	    }
 	}
 
-	const wordSpaceTexelFunction = (numberSpace) => {
-	    const diff = numberSpace.min - numberSpace.max;
+	const wordSpaceTexelFunction = (linearSpace) => {
+	    const diff = linearSpace.lowerBound - linearSpace.upperBound;
 	    const a = -1 / diff;
-	    const b = numberSpace.min / diff;
+	    const b = linearSpace.lowerBound / diff;
 	    return { a, b };
 	};
 
+	class LinearSpace {
+	    constructor(lowerBound, upperBound) {
+	        this.lowerBound = lowerBound;
+	        this.upperBound = upperBound;
+	        this.convert = (value, to) => {
+	            const progress = (this.upperBound - value) / this.size;
+	            return to.lowerBound + (to.size * progress);
+	        };
+	    }
+	    get size() {
+	        if (this._size === undefined) {
+	            this._size = this.upperBound - this.lowerBound;
+	        }
+	        return this._size;
+	    }
+	}
+	const frameNumberSpace = new LinearSpace(-1, 1);
+	const frameNumberSpace2d = { x: frameNumberSpace, y: frameNumberSpace };
 	const numberSpace = {
-	    frame: { min: -1, max: 1 },
+	    frame: frameNumberSpace,
+	    frame2d: frameNumberSpace2d,
 	    geometryWorldTexels: (vertices) => {
 	        const worldSpaceTexelsXs = vertices.map(vertex => vertex.worldTexel.x);
 	        const worldSpaceTexelsYs = vertices.map(vertex => vertex.worldTexel.y);
@@ -1507,8 +1526,8 @@
 	        const minY = Math.min(...worldSpaceTexelsYs);
 	        const maxY = Math.max(...worldSpaceTexelsYs);
 	        return {
-	            x: { min: minX, max: maxX },
-	            y: { min: minY, max: maxY },
+	            x: new LinearSpace(minX, maxX),
+	            y: new LinearSpace(minY, maxY),
 	        };
 	    },
 	};
@@ -1550,6 +1569,7 @@
 	            this.root.mapView = this;
 	            this.add(this.root);
 	            setTimeout(() => {
+	                console.log('begin');
 	                const vertices = [
 	                    new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
 	                    new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
@@ -1560,15 +1580,16 @@
 	                    this.uniforms.update.circle.radius(identity, 200);
 	                    this.uniforms.update.circle.geoposition(identity, vertex);
 	                });
-	                const geometryWorldTexelSpaces = numberSpace.geometryWorldTexels(vertices);
-	                const xFunc = wordSpaceTexelFunction(geometryWorldTexelSpaces.x);
-	                const yFunc = wordSpaceTexelFunction(geometryWorldTexelSpaces.y);
+	                const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
+	                const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);
+	                const yFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.y);
 	                this.uniforms.uniforms['shape'] = new THREE.Uniform({
 	                    aX: xFunc.a,
 	                    bX: xFunc.b,
 	                    aY: yFunc.a,
 	                    bY: yFunc.b,
 	                });
+	                console.log('world space texels xd');
 	            }, 1000);
 	        }
 	    }
