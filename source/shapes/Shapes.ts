@@ -1,4 +1,4 @@
-import { BoxGeometry, BufferAttribute, BufferGeometry, Camera, Color, DoubleSide, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, PlaneBufferGeometry, Scene, ShapeBufferGeometry, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { BoxGeometry, BufferAttribute, BufferGeometry, Camera, Color, DoubleSide, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, PlaneBufferGeometry, Scene, ShapeBufferGeometry, Texture, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { editLines } from '../utils/shderEditor';
 
 export class Shape {
@@ -13,50 +13,34 @@ export class Shape {
         private readonly mesh: Mesh,
     ) {}
 
-    static make = () => {
-        var camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.00001, 1000000 );
-        var bufferScene = new Scene();
-        var bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
-        var redMaterial = new MeshBasicMaterial({color:0xF06565});
-        var boxGeometry = new BoxGeometry( 5, 5, 5 );
-        var boxObject = new Mesh( boxGeometry, redMaterial );
-        boxObject.position.z = -10; 
-        var blueMaterial = new MeshBasicMaterial({color:0x7074FF})
-        var plane = new PlaneBufferGeometry( window.innerWidth, window.innerHeight );
-        var planeObject = new Mesh(plane,blueMaterial);
-        planeObject.position.z = -15;
-        var boxMaterial = new MeshBasicMaterial({ map:bufferTexture.texture });
-        const vertices = new Float32Array( [
-            0.5,  0.5,  0.0,
-            -0.5,  0.5,  0.0,
-            -0.5, -0.5,  0.0
-        ]);
-        const geometry = new BufferGeometry();
-        geometry.setAttribute( 'position', new BufferAttribute( vertices, 3 ) );
-        const material = new MeshBasicMaterial( { color: 0xff0000 } );
+    // static make = () => {
+    //     var camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.00001, 1000000 );
+    //     var bufferScene = new Scene();
+    //     bufferScene.name = 'shapes_scene';
+    //     bufferScene.background = new Color('green');
+    //     var bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
+    //     const geometry = new BufferGeometry();
+    //     const material = new MeshBasicMaterial( { color: 0xff0000 } );
 
-        material.onBeforeCompile = shader => {
-            shader.vertexShader = `
-                void main() {
-                    gl_Position = vec4(position, 1.0);
-                }
-            `;
+    //     material.onBeforeCompile = shader => {
+    //         shader.vertexShader = `
+    //             void main() {
+    //                 gl_Position = vec4(position, 1.0);
+    //             }
+    //         `;
 
-            shader.fragmentShader = `
-                void main() {
-                    gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
-                }
-            `;
-        };
+    //         shader.fragmentShader = `
+    //             void main() {
+    //                 gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
+    //             }
+    //         `;
+    //     };
 
-        const mesh = new Mesh( geometry, material );
-        bufferScene.add(mesh);
-
-        console.log('bufferTexture', bufferTexture);
-        bufferTexture.texture.name = 'buffered';
-
-        return new Shape(bufferTexture, bufferScene, camera, mesh);
-    }
+    //     const mesh = new Mesh( geometry, material );
+    //     bufferScene.add(mesh);
+    //     bufferTexture.texture.name = 'shapes_buffer-texture';
+    //     return new Shape(bufferTexture, bufferScene, camera, mesh);
+    // }
 
     updateGeometry = (geometry: ShapeBufferGeometry) => {
         console.log('update geometry', geometry);
@@ -70,18 +54,67 @@ export class Shape {
     };
 }
 
+type ShapesRenderSetup = {
+    bufferRenderTarget: WebGLRenderTarget;
+    shapesStackScene: Scene;
+    camera: Camera;
+}
+
+const setupShapesRender = (): ShapesRenderSetup => {
+    const camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.00001, 1000000 );
+    const bufferScene = new Scene();
+    bufferScene.name = 'shapes_scene';
+    bufferScene.background = new Color('green');
+    const bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
+    // const geometry = new BufferGeometry();
+    // const material = new MeshBasicMaterial( { color: 0xff0000 } );
+
+    // material.onBeforeCompile = shader => {
+    //     shader.vertexShader = `
+    //         void main() {
+    //             gl_Position = vec4(position, 1.0);
+    //         }
+    //     `;
+
+    //     shader.fragmentShader = `
+    //         void main() {
+    //             gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
+    //         }
+    //     `;
+    // };
+
+    // const mesh = new Mesh( geometry, material );
+    // bufferScene.add(mesh);
+    bufferTexture.texture.name = 'shapes_buffer-texture';
+    return { bufferRenderTarget: bufferTexture, camera, shapesStackScene: bufferScene };
+};
+
 export class Shapes {
     private readonly shapes: Shape[] = [];
+    
+    private readonly setup: ShapesRenderSetup;
 
-    makeShape = () => {
-        const shape = Shape.make();
-        this.shapes.push(shape);
-        return shape;
-    };
+    get bufferTexture() {
+        return this.setup.bufferRenderTarget.texture;
+    }
+
+    constructor() {
+        this.setup = setupShapesRender();
+    }
+
+    // makeShape = () => {
+    //     const shape = Shape.make();
+    //     this.shapes.push(shape);
+    //     return shape;
+    // };
 
     render = (webglRenderer: WebGLRenderer) => {
         this.shapes.forEach(shape => {
             shape.render(webglRenderer);
         });
+
+        console.log('render shapes');
+        webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
+        webglRenderer.render(this.setup.shapesStackScene, this.setup.camera);
     };
 }

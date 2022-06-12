@@ -17,8 +17,7 @@ export class RenderEnviroment {
 
     setupShapes = (texelWorldSpace: LinearSpace2d, texelWorldTransform: LinearTransform2d, vertices: Geoposition[]) => {
         this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
-        const shape = this.deferredRenderer.shapes.makeShape();
-        this.shaderUniforms.update.shapes.bufferTexture(shape.bufferSampler);
-        shape.updateGeometry(new PolygonGeometry(vertices, texelWorldSpace, texelWorldTransform).shapeGeometry);
+        this.shaderUniforms.update.shapes.bufferTexture(this.deferredRenderer.shapes.bufferTexture);
+        //shape.updateGeometry(new PolygonGeometry(vertices, texelWorldSpace, texelWorldTransform).shapeGeometry);
     };
 }

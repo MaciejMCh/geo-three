@@ -1397,13 +1397,6 @@
 	        };
 	    },
 	};
-	const transform = {
-	    vertices: (vertices, from, to) => vertices
-	        .map(vertex => ({
-	        x: from.x.convert(vertex.worldTexel.x, to.x),
-	        y: from.y.convert(vertex.worldTexel.y, to.y),
-	    })),
-	};
 
 	class MapView extends three.Mesh {
 	    constructor(renderEnviroment, renderer, root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
@@ -2009,23 +2002,6 @@
 	    animate();
 	};
 
-	class PolygonGeometry {
-	    constructor(vertices, geometryTexelWorldSpace, worldToFrameTransform) {
-	        this.vertices = vertices;
-	        this.geometryTexelWorldSpace = geometryTexelWorldSpace;
-	        this.worldToFrameTransform = worldToFrameTransform;
-	    }
-	    get shapeGeometry() {
-	        if (!this._shapeGeometry) {
-	            const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
-	            const coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(-vertex.x, -vertex.y));
-	            console.log('coords', coordinatesList);
-	            this._shapeGeometry = new three.ShapeBufferGeometry(new three.Shape(coordinatesList));
-	        }
-	        return this._shapeGeometry;
-	    }
-	}
-
 	class RenderEnviroment {
 	    constructor(webGlRenderer, deferredRenderer, shaderUniforms) {
 	        this.webGlRenderer = webGlRenderer;
@@ -2033,86 +2009,36 @@
 	        this.shaderUniforms = shaderUniforms;
 	        this.setupShapes = (texelWorldSpace, texelWorldTransform, vertices) => {
 	            this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
-	            const shape = this.deferredRenderer.shapes.makeShape();
-	            this.shaderUniforms.update.shapes.bufferTexture(shape.bufferSampler);
-	            shape.updateGeometry(new PolygonGeometry(vertices, texelWorldSpace, texelWorldTransform).shapeGeometry);
+	            this.shaderUniforms.update.shapes.bufferTexture(this.deferredRenderer.shapes.bufferTexture);
 	        };
 	        webGlRenderer.setClearColor(0x000000, 0);
 	    }
 	}
 
-	class Shape {
-	    constructor(bufferTexture, bufferScene, camera, mesh) {
-	        this.bufferTexture = bufferTexture;
-	        this.bufferScene = bufferScene;
-	        this.camera = camera;
-	        this.mesh = mesh;
-	        this.updateGeometry = (geometry) => {
-	            console.log('update geometry', geometry);
-	            this.mesh.geometry = geometry;
-	        };
-	        this.render = (webglRenderer) => {
-	            console.log('render shape');
-	            webglRenderer.setRenderTarget(this.bufferTexture);
-	            webglRenderer.render(this.bufferScene, this.camera);
-	        };
-	    }
-	    get bufferSampler() {
-	        return this.bufferTexture.texture;
-	    }
-	}
-	Shape.make = () => {
-	    var camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
-	    var bufferScene = new three.Scene();
-	    var bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
-	    var redMaterial = new three.MeshBasicMaterial({ color: 0xF06565 });
-	    var boxGeometry = new three.BoxGeometry(5, 5, 5);
-	    var boxObject = new three.Mesh(boxGeometry, redMaterial);
-	    boxObject.position.z = -10;
-	    var blueMaterial = new three.MeshBasicMaterial({ color: 0x7074FF });
-	    var plane = new three.PlaneBufferGeometry(window.innerWidth, window.innerHeight);
-	    var planeObject = new three.Mesh(plane, blueMaterial);
-	    planeObject.position.z = -15;
-	    new three.MeshBasicMaterial({ map: bufferTexture.texture });
-	    const vertices = new Float32Array([
-	        0.5, 0.5, 0.0,
-	        -0.5, 0.5, 0.0,
-	        -0.5, -0.5, 0.0
-	    ]);
-	    const geometry = new three.BufferGeometry();
-	    geometry.setAttribute('position', new three.BufferAttribute(vertices, 3));
-	    const material = new three.MeshBasicMaterial({ color: 0xff0000 });
-	    material.onBeforeCompile = shader => {
-	        shader.vertexShader = `
-                void main() {
-                    gl_Position = vec4(position, 1.0);
-                }
-            `;
-	        shader.fragmentShader = `
-                void main() {
-                    gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
-                }
-            `;
-	    };
-	    const mesh = new three.Mesh(geometry, material);
-	    bufferScene.add(mesh);
-	    console.log('bufferTexture', bufferTexture);
-	    bufferTexture.texture.name = 'buffered';
-	    return new Shape(bufferTexture, bufferScene, camera, mesh);
+	const setupShapesRender = () => {
+	    const camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
+	    const bufferScene = new three.Scene();
+	    bufferScene.name = 'shapes_scene';
+	    bufferScene.background = new three.Color('green');
+	    const bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
+	    bufferTexture.texture.name = 'shapes_buffer-texture';
+	    return { bufferRenderTarget: bufferTexture, camera, shapesStackScene: bufferScene };
 	};
 	class Shapes {
 	    constructor() {
 	        this.shapes = [];
-	        this.makeShape = () => {
-	            const shape = Shape.make();
-	            this.shapes.push(shape);
-	            return shape;
-	        };
 	        this.render = (webglRenderer) => {
 	            this.shapes.forEach(shape => {
 	                shape.render(webglRenderer);
 	            });
+	            console.log('render shapes');
+	            webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
+	            webglRenderer.render(this.setup.shapesStackScene, this.setup.camera);
 	        };
+	        this.setup = setupShapesRender();
+	    }
+	    get bufferTexture() {
+	        return this.setup.bufferRenderTarget.texture;
 	    }
 	}
 
