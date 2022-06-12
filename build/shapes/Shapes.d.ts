@@ -1,12 +1,13 @@
-import { Camera, Mesh, Scene, ShapeBufferGeometry, Texture, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { Camera, Scene, Texture, WebGLRenderer, WebGLRenderTarget } from 'three';
+declare type ShapeRenderSetup = {
+    bufferRenderTarget: WebGLRenderTarget;
+    shapeScene: Scene;
+    camera: Camera;
+};
 export declare class Shape {
-    private readonly bufferTexture;
-    private readonly bufferScene;
-    private readonly camera;
-    private readonly mesh;
-    get bufferSampler(): Texture;
-    constructor(bufferTexture: WebGLRenderTarget, bufferScene: Scene, camera: Camera, mesh: Mesh);
-    updateGeometry: (geometry: ShapeBufferGeometry) => void;
+    private debugIdentity;
+    private setup;
+    constructor(debugIdentity: string, setup: ShapeRenderSetup);
     render: (webglRenderer: WebGLRenderer) => void;
 }
 export declare class Shapes {
@@ -14,5 +15,7 @@ export declare class Shapes {
     private readonly setup;
     get bufferTexture(): Texture;
     constructor();
+    makeShape: (debugIdentity: string) => Shape;
     render: (webglRenderer: WebGLRenderer) => void;
 }
+export {};

@@ -15,9 +15,8 @@ export class RenderEnviroment {
         webGlRenderer.setClearColor(0x000000, 0);
     }
 
-    setupShapes = (texelWorldSpace: LinearSpace2d, texelWorldTransform: LinearTransform2d, vertices: Geoposition[]) => {
+    setupShapes = (texelWorldSpace: LinearSpace2d, texelWorldTransform: LinearTransform2d) => {
         this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
         this.shaderUniforms.update.shapes.bufferTexture(this.deferredRenderer.shapes.bufferTexture);
-        //shape.updateGeometry(new PolygonGeometry(vertices, texelWorldSpace, texelWorldTransform).shapeGeometry);
     };
 }

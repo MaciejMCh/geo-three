@@ -1450,7 +1450,8 @@
 	                const xFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.x);
 	                const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
 	                const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
-	                this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform, vertices);
+	                this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform);
+	                this.renderEnviroment.deferredRenderer.shapes.makeShape('test-polygon');
 	            }, 1000);
 	        }
 	    }
@@ -2007,7 +2008,7 @@
 	        this.webGlRenderer = webGlRenderer;
 	        this.deferredRenderer = deferredRenderer;
 	        this.shaderUniforms = shaderUniforms;
-	        this.setupShapes = (texelWorldSpace, texelWorldTransform, vertices) => {
+	        this.setupShapes = (texelWorldSpace, texelWorldTransform) => {
 	            this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
 	            this.shaderUniforms.update.shapes.bufferTexture(this.deferredRenderer.shapes.bufferTexture);
 	        };
@@ -2015,6 +2016,17 @@
 	    }
 	}
 
+	class Shape {
+	    constructor(debugIdentity, setup) {
+	        this.debugIdentity = debugIdentity;
+	        this.setup = setup;
+	        this.render = (webglRenderer) => {
+	            console.log('render shape', this.debugIdentity);
+	            webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
+	            webglRenderer.render(this.setup.shapeScene, this.setup.camera);
+	        };
+	    }
+	}
 	const setupShapesRender = () => {
 	    const camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
 	    const bufferScene = new three.Scene();
@@ -2024,9 +2036,56 @@
 	    bufferTexture.texture.name = 'shapes_buffer-texture';
 	    return { bufferRenderTarget: bufferTexture, camera, shapesStackScene: bufferScene };
 	};
+	const makeShapeLayer = (bufferTexture) => {
+	    const geometry = new three.ShapeBufferGeometry(new three.Shape([
+	        new three.Vector2(1, 1),
+	        new three.Vector2(1, -1),
+	        new three.Vector2(-1, -1),
+	        new three.Vector2(-1, 1),
+	    ]));
+	    const material = new three.MeshBasicMaterial({ color: 0xff0000 });
+	    material.onBeforeCompile = shader => {
+	        shader.vertexShader = `
+            varying vec2 vTexel;
+
+            void main() {
+                vTexel = vec2((position.x + 1.0) * 0.5, (position.y + 1.0) * 0.5);
+                gl_Position = vec4(position, 1.0);
+            }
+        `;
+	        shader.fragmentShader = `
+            varying vec2 vTexel;
+            uniform sampler2D uBufferSampler;
+
+            void main() {
+                gl_FragColor = texture2D(uBufferSampler, vTexel);
+            }
+        `;
+	        shader.uniforms['uBufferSampler'] = new three.Uniform(bufferTexture);
+	    };
+	    const mesh = new three.Mesh(geometry, material);
+	    return { mesh };
+	};
+	const setupShapeRender = (debugIdentity) => {
+	    const camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
+	    const bufferScene = new three.Scene();
+	    bufferScene.name = `shape-${debugIdentity}_scene`;
+	    bufferScene.background = new three.Color('blue');
+	    const bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
+	    bufferTexture.texture.name = `shape-${debugIdentity}_buffer-texture`;
+	    return { bufferRenderTarget: bufferTexture, camera, shapeScene: bufferScene };
+	};
 	class Shapes {
 	    constructor() {
 	        this.shapes = [];
+	        this.makeShape = (debugIdentity) => {
+	            const setup = setupShapeRender(debugIdentity);
+	            const shapeLayer = makeShapeLayer(setup.bufferRenderTarget.texture);
+	            this.setup.shapesStackScene.add(shapeLayer.mesh);
+	            const shape = new Shape(debugIdentity, setup);
+	            this.shapes.push(shape);
+	            return shape;
+	        };
 	        this.render = (webglRenderer) => {
 	            this.shapes.forEach(shape => {
 	                shape.render(webglRenderer);

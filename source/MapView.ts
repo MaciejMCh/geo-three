@@ -211,7 +211,10 @@ export class MapView extends Mesh
 				const xFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.x);
 				const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
 				const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
-				this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform, vertices);
+				this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform);
+				
+				const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape('test-polygon');
+				//polygonShape.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
 			}, 1000);
 		}
 	}
