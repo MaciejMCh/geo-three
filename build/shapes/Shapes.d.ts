@@ -1,11 +1,13 @@
-import { Camera, Scene, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { Camera, Mesh, Scene, ShapeBufferGeometry, WebGLRenderer, WebGLRenderTarget } from 'three';
 declare class Shape {
     private readonly bufferTexture;
     private readonly bufferScene;
     private readonly camera;
+    private readonly mesh;
     get bufferSampler(): import("three").Texture;
-    constructor(bufferTexture: WebGLRenderTarget, bufferScene: Scene, camera: Camera);
+    constructor(bufferTexture: WebGLRenderTarget, bufferScene: Scene, camera: Camera, mesh: Mesh);
     static make: () => Shape;
+    updateGeometry: (geometry: ShapeBufferGeometry) => void;
     render: (webglRenderer: WebGLRenderer) => void;
 }
 export declare class Shapes {

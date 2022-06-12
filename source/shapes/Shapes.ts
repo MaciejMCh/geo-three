@@ -1,4 +1,4 @@
-import { BoxGeometry, BufferAttribute, BufferGeometry, Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, PlaneBufferGeometry, Scene, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { BoxGeometry, BufferAttribute, BufferGeometry, Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, PlaneBufferGeometry, Scene, ShapeBufferGeometry, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { editLines } from '../utils/shderEditor';
 
 class Shape {
@@ -10,6 +10,7 @@ class Shape {
         private readonly bufferTexture: WebGLRenderTarget,
         private readonly bufferScene: Scene,
         private readonly camera: Camera,
+        private readonly mesh: Mesh,
     ) {}
 
     static make = () => {
@@ -27,9 +28,9 @@ class Shape {
         planeObject.position.z = -15;
         var boxMaterial = new MeshBasicMaterial({ map:bufferTexture.texture });
         const vertices = new Float32Array( [
-            1.0,  1.0,  0.0,
-            -1.0,  1.0,  0.0,
-            -1.0, -1.0,  0.0
+            0.5,  0.5,  0.0,
+            -0.5,  0.5,  0.0,
+            -0.5, -0.5,  0.0
         ]);
         const geometry = new BufferGeometry();
         geometry.setAttribute( 'position', new BufferAttribute( vertices, 3 ) );
@@ -65,8 +66,12 @@ class Shape {
         console.log('bufferTexture', bufferTexture);
         bufferTexture.texture.name = 'buffered';
 
-        return new Shape(bufferTexture, bufferScene, camera);
+        return new Shape(bufferTexture, bufferScene, camera, mesh);
     }
+
+    updateGeometry = (geometry: ShapeBufferGeometry) => {
+        this.mesh.geometry = geometry;
+    };
 
     render = (webglRenderer: WebGLRenderer) => {
         console.log('render shape');

@@ -1461,6 +1461,7 @@
 	                console.log(frameSpaceVertices);
 	                var coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(vertex.x, vertex.y));
 	                var geomShape = new three.ShapeBufferGeometry(new three.Shape(coordinatesList));
+	                shape.updateGeometry(geomShape);
 	                console.log(geomShape);
 	            }, 1000);
 	        }
@@ -2022,10 +2023,14 @@
 	}
 
 	class Shape {
-	    constructor(bufferTexture, bufferScene, camera) {
+	    constructor(bufferTexture, bufferScene, camera, mesh) {
 	        this.bufferTexture = bufferTexture;
 	        this.bufferScene = bufferScene;
 	        this.camera = camera;
+	        this.mesh = mesh;
+	        this.updateGeometry = (geometry) => {
+	            this.mesh.geometry = geometry;
+	        };
 	        this.render = (webglRenderer) => {
 	            console.log('render shape');
 	            webglRenderer.setRenderTarget(this.bufferTexture);
@@ -2051,9 +2056,9 @@
 	    planeObject.position.z = -15;
 	    new three.MeshBasicMaterial({ map: bufferTexture.texture });
 	    const vertices = new Float32Array([
-	        1.0, 1.0, 0.0,
-	        -1.0, 1.0, 0.0,
-	        -1.0, -1.0, 0.0
+	        0.5, 0.5, 0.0,
+	        -0.5, 0.5, 0.0,
+	        -0.5, -0.5, 0.0
 	    ]);
 	    const geometry = new three.BufferGeometry();
 	    geometry.setAttribute('position', new three.BufferAttribute(vertices, 3));
@@ -2084,7 +2089,7 @@
 	    bufferScene.add(mesh);
 	    console.log('bufferTexture', bufferTexture);
 	    bufferTexture.texture.name = 'buffered';
-	    return new Shape(bufferTexture, bufferScene, camera);
+	    return new Shape(bufferTexture, bufferScene, camera, mesh);
 	};
 	class Shapes {
 	    constructor() {

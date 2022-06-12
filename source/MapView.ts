@@ -196,6 +196,7 @@ export class MapView extends Mesh
 
 				var coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
 				var geomShape = new ShapeBufferGeometry(new Shape(coordinatesList));
+				shape.updateGeometry(geomShape);
 				console.log(geomShape);
 				// updateDeferredGeometry(geomShape);
 			}, 1000);
