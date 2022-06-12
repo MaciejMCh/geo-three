@@ -1,4 +1,11 @@
 import * as THREE from 'three';
+import { BufferGeometry } from 'three';
+
+var geometry = new THREE.BufferGeometry();
+
+export const updateDeferredGeometry = (updatedGeometry: BufferGeometry) => {
+    geometry = updatedGeometry;
+};
 
 const editLines = (code: string, editor: (lines: string[]) => void) => {
 	const lines = code.split('\n');
@@ -55,7 +62,7 @@ export const xd = (renderer: THREE.WebGLRenderer) => {
 
 
 
-    const geometry = new THREE.BufferGeometry();
+    
 // create a simple square shape. We duplicate the top left and bottom right
 // vertices because each vertex needs to appear once per triangle.
 const vertices = new Float32Array( [
@@ -98,6 +105,10 @@ material.onBeforeCompile = shader => {
 
 const mesh = new THREE.Mesh( geometry, material );
 bufferScene.add(mesh);
+
+setInterval(() => {
+    mesh.geometry = geometry;
+}, 1000);
 
 
 

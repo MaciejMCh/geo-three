@@ -11,7 +11,7 @@ import {LODControl} from './lod/LODControl';
 import {MapMartiniHeightNode} from './nodes/MapMartiniHeightNode';
 import { Geoposition } from './nodes/primitive';
 import { ShaderUniforms } from './uniforms';
-import { xd } from './deferredRendering/deferredRendering';
+import { updateDeferredGeometry, xd } from './deferredRendering/deferredRendering';
 import { wordSpaceTexelFunction } from './utils/LinearFunction';
 import { numberSpace, transform } from './utils/LinearTransform';
 
@@ -185,12 +185,13 @@ export class MapView extends Mesh
 				});
 
 				console.log('world space texels xd');
-				// const frameSpaceVertices = transform.vertices(vertices, geometryTexelWorldSpace, numberSpace.frame2d);
-				// console.log(frameSpaceVertices);
+				const frameSpaceVertices = transform.vertices(vertices, geometryTexelWorldSpace, numberSpace.frame2d);
+				console.log(frameSpaceVertices);
 
-				// var coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
-				// var geomShape = new ShapeBufferGeometry(new Shape(coordinatesList));
-				// console.log(geomShape);
+				var coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
+				var geomShape = new ShapeBufferGeometry(new Shape(coordinatesList));
+				console.log(geomShape);
+				updateDeferredGeometry(geomShape);
 			}, 1000);
 		}
 	}

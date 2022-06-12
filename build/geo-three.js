@@ -469,6 +469,10 @@
 	    },
 	};
 
+	var geometry = new THREE__namespace.BufferGeometry();
+	const updateDeferredGeometry = (updatedGeometry) => {
+	    geometry = updatedGeometry;
+	};
 	const editLines$1 = (code, editor) => {
 	    const lines = code.split('\n');
 	    editor(lines);
@@ -489,7 +493,6 @@
 	    var planeObject = new THREE__namespace.Mesh(plane, blueMaterial);
 	    planeObject.position.z = -15;
 	    var boxMaterial = new THREE__namespace.MeshBasicMaterial({ map: bufferTexture.texture });
-	    const geometry = new THREE__namespace.BufferGeometry();
 	    const vertices = new Float32Array([
 	        1.0, 1.0, 0.0,
 	        -1.0, 1.0, 0.0,
@@ -521,6 +524,9 @@
 	    };
 	    const mesh = new THREE__namespace.Mesh(geometry, material);
 	    bufferScene.add(mesh);
+	    setInterval(() => {
+	        mesh.geometry = geometry;
+	    }, 1000);
 	    function render() {
 	        requestAnimationFrame(render);
 	        boxObject.rotation.y += 0.01;
@@ -1531,6 +1537,13 @@
 	        };
 	    },
 	};
+	const transform = {
+	    vertices: (vertices, from, to) => vertices
+	        .map(vertex => ({
+	        x: from.x.convert(vertex.worldTexel.x, to.x),
+	        y: from.y.convert(vertex.worldTexel.y, to.y),
+	    })),
+	};
 
 	class MapView extends THREE.Mesh {
 	    constructor(renderer, root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
@@ -1590,6 +1603,12 @@
 	                    bY: yFunc.b,
 	                });
 	                console.log('world space texels xd');
+	                const frameSpaceVertices = transform.vertices(vertices, geometryTexelWorldSpace, numberSpace.frame2d);
+	                console.log(frameSpaceVertices);
+	                var coordinatesList = frameSpaceVertices.map(vertex => new THREE.Vector2(vertex.x, vertex.y));
+	                var geomShape = new THREE.ShapeBufferGeometry(new THREE.Shape(coordinatesList));
+	                console.log(geomShape);
+	                updateDeferredGeometry(geomShape);
 	            }, 1000);
 	        }
 	    }
