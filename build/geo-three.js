@@ -2037,6 +2037,7 @@
 	            this.shaderUniforms.update.shapes.bufferTexture(shape.bufferSampler);
 	            shape.updateGeometry(new PolygonGeometry(vertices, texelWorldSpace, texelWorldTransform).shapeGeometry);
 	        };
+	        webGlRenderer.setClearColor(0x000000, 0);
 	    }
 	}
 
@@ -2063,7 +2064,6 @@
 	Shape.make = () => {
 	    var camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
 	    var bufferScene = new three.Scene();
-	    bufferScene.background = new three.Color('green');
 	    var bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
 	    var redMaterial = new three.MeshBasicMaterial({ color: 0xF06565 });
 	    var boxGeometry = new three.BoxGeometry(5, 5, 5);

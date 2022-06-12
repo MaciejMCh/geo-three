@@ -11,7 +11,9 @@ export class RenderEnviroment {
         public readonly webGlRenderer: WebGLRenderer,
         public readonly deferredRenderer: DeferredRenderer,
         public readonly shaderUniforms: ShaderUniforms,
-    ) {}
+    ) {
+        webGlRenderer.setClearColor(0x000000, 0);
+    }
 
     setupShapes = (texelWorldSpace: LinearSpace2d, texelWorldTransform: LinearTransform2d, vertices: Geoposition[]) => {
         this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);

@@ -16,7 +16,6 @@ export class Shape {
     static make = () => {
         var camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.00001, 1000000 );
         var bufferScene = new Scene();
-        bufferScene.background = new Color('green');
         var bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
         var redMaterial = new MeshBasicMaterial({color:0xF06565});
         var boxGeometry = new BoxGeometry( 5, 5, 5 );
