@@ -1,4 +1,4 @@
-import { Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, Scene, ShapeBufferGeometry, Texture, Vector2, WebGLRenderer, WebGLRenderTarget, Shape as ThreeShape, Uniform, BufferGeometry } from 'three';
+import { Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, Scene, ShapeBufferGeometry, Texture, Vector2, WebGLRenderer, WebGLRenderTarget, Shape as ThreeShape, Uniform, BufferGeometry, LineSegments, EdgesGeometry, LineBasicMaterial } from 'three';
 import { Geometry } from './geometries';
 
 type ShapeRenderSetup = {
@@ -8,10 +8,19 @@ type ShapeRenderSetup = {
 };
 
 class SimpleGeometry {
-    constructor(private mesh: Mesh, private invalidate: () => void) {}
+    constructor(private readonly mesh: Mesh, private invalidate: () => void) {}
 
     updateGeometry = (geometry: Geometry) => {
         this.mesh.geometry = geometry.shapeGeometry;
+        this.invalidate();
+    };
+}
+
+class PathGeometry {
+    constructor(public readonly mesh: LineSegments, private invalidate: () => void) {}
+
+    updateGeometry = (geometry: Geometry) => {
+        this.mesh.geometry = new EdgesGeometry(geometry.shapeGeometry);
         this.invalidate();
     };
 }
@@ -32,25 +41,21 @@ export class Shape {
     };
 
     useSimpleGeometry = (): SimpleGeometry => {
-        const material = new MeshBasicMaterial({ color: 0xff0000 });
-        material.onBeforeCompile = shader => {
-            shader.vertexShader = `
-                void main() {
-                    gl_Position = vec4(position, 1.0);
-                }
-            `;
-    
-            shader.fragmentShader = `
-                void main() {
-                    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                }
-            `;
-        };
+        const material = new MeshBasicMaterial({ color: 0xffffff });
         const mesh = new Mesh(new ShapeBufferGeometry(), material);
         mesh.name = `${this.debugIdentity}_simple-geometry-mesh`;
         this.setup.shapeScene.add(mesh);
         this.invalidate();
         return new SimpleGeometry(mesh, this.invalidate);
+    };
+
+    usePathGeometry = (): PathGeometry => {
+        const geometry = new EdgesGeometry();
+        const material = new LineBasicMaterial({ color: 0xff00ff,5 });
+        const wireframe = new LineSegments(geometry, material);
+        wireframe.name = `${this.debugIdentity}_path-geometry-mesh`;
+        this.setup.shapeScene.add(wireframe);
+        return new PathGeometry(wireframe, this.invalidate);
     };
 
     invalidate = () => {
@@ -111,7 +116,7 @@ const makeShapeLayer = (debugIdentity: string, bufferTexture: Texture) => {
 };
 
 const setupShapeRender = (debugIdentity: string): ShapeRenderSetup => {
-    const camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.00001, 1000000 );
+    const camera = new Camera();
     const bufferScene = new Scene();
     bufferScene.name = `shape-${debugIdentity}_scene`;
     const bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
@@ -148,7 +153,7 @@ export class Shapes {
             shape.render(webglRenderer);
         });
 
-        console.log('render shapes', this.setup.shapesStackScene.children);
+        // console.log('render shapes', this.setup.shapesStackScene.children);
         webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
         webglRenderer.render(this.setup.shapesStackScene, this.setup.camera);
     };

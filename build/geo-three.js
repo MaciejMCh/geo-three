@@ -1471,7 +1471,7 @@
 	                        this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 	                    });
 	                    const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
-	                    const geometryHandle = polygonShape.useSimpleGeometry();
+	                    const geometryHandle = polygonShape.usePathGeometry();
 	                    geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
 	                };
 	                displayTriangle('first', [
@@ -2059,6 +2059,16 @@
 	        };
 	    }
 	}
+	class PathGeometry {
+	    constructor(mesh, invalidate) {
+	        this.mesh = mesh;
+	        this.invalidate = invalidate;
+	        this.updateGeometry = (geometry) => {
+	            this.mesh.geometry = new three.EdgesGeometry(geometry.shapeGeometry);
+	            this.invalidate();
+	        };
+	    }
+	}
 	class Shape {
 	    constructor(debugIdentity, setup) {
 	        this.debugIdentity = debugIdentity;
@@ -2074,24 +2084,20 @@
 	            this.needsRender = false;
 	        };
 	        this.useSimpleGeometry = () => {
-	            const material = new three.MeshBasicMaterial({ color: 0xff0000 });
-	            material.onBeforeCompile = shader => {
-	                shader.vertexShader = `
-                void main() {
-                    gl_Position = vec4(position, 1.0);
-                }
-            `;
-	                shader.fragmentShader = `
-                void main() {
-                    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                }
-            `;
-	            };
+	            const material = new three.MeshBasicMaterial({ color: 0xffffff });
 	            const mesh = new three.Mesh(new three.ShapeBufferGeometry(), material);
 	            mesh.name = `${this.debugIdentity}_simple-geometry-mesh`;
 	            this.setup.shapeScene.add(mesh);
 	            this.invalidate();
 	            return new SimpleGeometry(mesh, this.invalidate);
+	        };
+	        this.usePathGeometry = () => {
+	            const geometry = new three.EdgesGeometry();
+	            const material = new three.LineBasicMaterial({ color: 0xff00ff, linewidth: 5 });
+	            const wireframe = new three.LineSegments(geometry, material);
+	            wireframe.name = `${this.debugIdentity}_path-geometry-mesh`;
+	            this.setup.shapeScene.add(wireframe);
+	            return new PathGeometry(wireframe, this.invalidate);
 	        };
 	        this.invalidate = () => {
 	            this.needsRender = true;
@@ -2138,7 +2144,7 @@
 	    return { mesh };
 	};
 	const setupShapeRender = (debugIdentity) => {
-	    const camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
+	    const camera = new three.Camera();
 	    const bufferScene = new three.Scene();
 	    bufferScene.name = `shape-${debugIdentity}_scene`;
 	    const bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
@@ -2161,7 +2167,6 @@
 	            this.shapes.forEach(shape => {
 	                shape.render(webglRenderer);
 	            });
-	            console.log('render shapes', this.setup.shapesStackScene.children);
 	            webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
 	            webglRenderer.render(this.setup.shapesStackScene, this.setup.camera);
 	        };
