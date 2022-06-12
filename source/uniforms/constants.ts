@@ -3,6 +3,6 @@ export const constants = {
 		limit: 20,
 	},
 	shapes: {
-		limit: 20,
+		limit: 5,
 	},
 };

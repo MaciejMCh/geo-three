@@ -1,4 +1,4 @@
-import { IUniform, Shader, Uniform, Vector3, MathUtils, Texture } from 'three';
+import { IUniform, Shader, Uniform, Vector3, MathUtils, Texture, LinearFilter, NearestFilter, WebGLRenderTarget } from 'three';
 import { Geoposition } from '../nodes/primitive';
 import { LinearTransform2d } from '../utils/LinearFunction';
 import { constants } from './constants';
@@ -96,11 +96,12 @@ export class ShaderUniforms {
         radius: 0,
     });
 
-    private makeBlankShape = () => ({
+    private makeBlankShape = (texture: Texture) => ({
         worldToFrameTransform: {
             x: { a: 0, b: 0 },
             y: { a: 0, b: 0 },
         },
+        bufferSampler: texture,
     });
 
     private setupCircles = (uniforms: Uniforms) => {
@@ -114,8 +115,9 @@ export class ShaderUniforms {
 
     private setupShapes = (uniforms: Uniforms) => {
         const shapes: object[] = [];
+        const renderTarget = new WebGLRenderTarget(16, 16, { minFilter: LinearFilter, magFilter: NearestFilter });
         for (let index = 0; index < constants.shapes.limit; index++) {
-            shapes.push(this.makeBlankShape());
+            shapes.push(this.makeBlankShape(renderTarget.texture));
         }
 		uniforms['shapes'] = new Uniform(shapes);
         uniforms['shapesCount'] = new Uniform(0);

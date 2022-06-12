@@ -173,8 +173,8 @@ export class MapView extends Mesh
 					this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 				});
 
-				const polygon = this.renderEnviroment.makeShape();
-				polygon.updateGeometry(new PolygonGeometry(vertices));
+				//const polygon = this.renderEnviroment.makeShape();
+				//polygon.updateGeometry(new PolygonGeometry(vertices));
 
 				// const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
 				// const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);

@@ -30,7 +30,6 @@ export declare class ShaderUniforms {
         circle: (identity: DrawableIdentity) => void;
     };
     addShader: (shader: Shader) => void;
-    createCircle: () => void;
     private setup;
     private makeBlankCircle;
     private makeBlankShape;

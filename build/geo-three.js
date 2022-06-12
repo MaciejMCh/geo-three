@@ -448,7 +448,7 @@
 	        limit: 20,
 	    },
 	    shapes: {
-	        limit: 20,
+	        limit: 5,
 	    },
 	};
 
@@ -523,26 +523,32 @@
 				`,
 	                `
 					vec4 shapeColor(Shape shape, vec3 worldPosition) {
-						vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), shape.worldToFrameTransform);
-						if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
-							//return vec4(1.0, 1.0, 0.0, 1.0);
-							return texture2D(shape.bufferSampler, worldTexel);
-						} else {
-							return vec4(0.0, 0.0, 0.0, 0.0);
-						}
+						return vec4(1.0, 1.0, 1.0, 1.0);
+						// vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), shape.worldToFrameTransform);
+						// if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
+						// 	//return vec4(1.0, 1.0, 0.0, 1.0);
+						// 	return texture2D(shape.bufferSampler, worldTexel);
+						// } else {
+						// 	return vec4(0.0, 0.0, 0.0, 0.0);
+						// }
 					}
 				`,
 	                `uniform Circle circles[${constants.circles.limit}];`,
 	                'uniform int circlesCount;',
-	                'uniform Shape shape;'
+	                `uniform Shape shapes[${constants.shapes.limit}];`,
+	                'uniform int shapesCount;'
 	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
+				for (int i = 0; i <= shapesCount; i++) {
+					Shape shape = shapes[0];
+				 	//vec4 eachShapeColor = shapeColor(shapes[i], vWorldPosition);
+				 	//gl_FragColor = mix(gl_FragColor, shapeColor, shapeColor.a);
+				}
+
 				for (int i = 0; i <= circlesCount; i++) {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
-				vec4 shapeColor = shapeColor(shape, vWorldPosition);
-				gl_FragColor = mix(gl_FragColor, shapeColor, shapeColor.a);
 			`);
 	        });
 	        uniforms.addShader(shader);
@@ -1393,8 +1399,6 @@
 	                    this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
 	                    this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 	                });
-	                const polygon = this.renderEnviroment.makeShape();
-	                polygon.updateGeometry(geometry.make.polygon(vertices));
 	            }, 1000);
 	        }
 	    }
@@ -1946,13 +1950,27 @@
 	    animate();
 	};
 
+	class ShapeDrawable {
+	    constructor(shape, drawableIdentity, shaderUniforms) {
+	        this.shape = shape;
+	        this.drawableIdentity = drawableIdentity;
+	        this.shaderUniforms = shaderUniforms;
+	        this.updateGeometry = (geometry) => {
+	            this.shaderUniforms.update.shape.worldToFrameTransform(this.drawableIdentity, geometry.worldToFrameTransform);
+	            this.shape.updateGeometry(geometry.shapeGeometry);
+	        };
+	    }
+	}
+
 	class RenderEnviroment {
 	    constructor(webGlRenderer, deferredRenderer, shaderUniforms) {
 	        this.webGlRenderer = webGlRenderer;
 	        this.deferredRenderer = deferredRenderer;
 	        this.shaderUniforms = shaderUniforms;
 	        this.makeShape = () => {
-	            this.shaderUniforms.create.shape();
+	            const shape = this.deferredRenderer.shapes.makeShape();
+	            const shapeUniformIdentity = this.shaderUniforms.create.shape(shape.bufferSampler);
+	            return new ShapeDrawable(shape, shapeUniformIdentity, this.shaderUniforms);
 	        };
 	    }
 	}
@@ -2090,7 +2108,16 @@
 	            },
 	            shape: {
 	                worldToFrameTransform: (identity, worldToFrameTransform) => {
-	                    this.shapesByIds[identity.raw]['worldToFrameTransform'] = worldToFrameTransform;
+	                    this.shapesByIds[identity.raw]['worldToFrameTransform'] = {
+	                        x: {
+	                            a: worldToFrameTransform.x.a,
+	                            b: worldToFrameTransform.x.b,
+	                        },
+	                        y: {
+	                            a: worldToFrameTransform.y.a,
+	                            b: worldToFrameTransform.y.b,
+	                        },
+	                    };
 	                },
 	            },
 	        };
@@ -2113,8 +2140,6 @@
 	            }
 	            shader.uniforms = this.uniforms;
 	        };
-	        this.createCircle = () => {
-	        };
 	        this.setup = (uniforms) => {
 	            this.setupCircles(uniforms);
 	            this.setupShapes(uniforms);
@@ -2123,7 +2148,13 @@
 	            worldOrigin: new three.Vector3(),
 	            radius: 0,
 	        });
-	        this.makeBlankShape = () => ({});
+	        this.makeBlankShape = (texture) => ({
+	            worldToFrameTransform: {
+	                x: { a: 0, b: 0 },
+	                y: { a: 0, b: 0 },
+	            },
+	            bufferSampler: texture,
+	        });
 	        this.setupCircles = (uniforms) => {
 	            const circles = [];
 	            for (let index = 0; index < constants.circles.limit; index++) {
@@ -2134,8 +2165,9 @@
 	        };
 	        this.setupShapes = (uniforms) => {
 	            const shapes = [];
+	            const renderTarget = new three.WebGLRenderTarget(16, 16, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
 	            for (let index = 0; index < constants.shapes.limit; index++) {
-	                shapes.push(this.makeBlankShape());
+	                shapes.push(this.makeBlankShape(renderTarget.texture));
 	            }
 	            uniforms['shapes'] = new three.Uniform(shapes);
 	            uniforms['shapesCount'] = new three.Uniform(0);

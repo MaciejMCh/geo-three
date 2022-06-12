@@ -1,5 +1,5 @@
 import { Camera, Mesh, Scene, ShapeBufferGeometry, WebGLRenderer, WebGLRenderTarget } from 'three';
-declare class Shape {
+export declare class Shape {
     private readonly bufferTexture;
     private readonly bufferScene;
     private readonly camera;
@@ -15,4 +15,3 @@ export declare class Shapes {
     makeShape: () => Shape;
     render: (webglRenderer: WebGLRenderer) => void;
 }
-export {};

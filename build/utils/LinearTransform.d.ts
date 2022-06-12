@@ -7,7 +7,7 @@ export declare class LinearSpace {
     constructor(lowerBound: number, upperBound: number);
     convert: (value: number, to: LinearSpace) => number;
 }
-declare type LinearSpace2d = {
+export declare type LinearSpace2d = {
     x: LinearSpace;
     y: LinearSpace;
 };
@@ -22,4 +22,3 @@ export declare const transform: {
         y: number;
     }[];
 };
-export {};
