@@ -8,27 +8,19 @@ import {MapNodeHeightGeometry} from '../geometries/MapNodeHeightGeometry';
 import {CanvasUtils} from '../utils/CanvasUtils';
 import { constants } from '../uniforms/constants';
 import { ShaderUniforms } from '../uniforms';
-import { xd } from '../deferredRendering/deferredRendering';
-import { wordSpaceTexelFunction } from '../utils/LinearFunction';
+import { editLines } from '../utils/shderEditor';
 
-var xdMap!: Texture;
+// var xdMap!: Texture;
 
-const getMap = (renderer: WebGLRenderer) => {
-	if (!xdMap) {
-		xdMap = xd(renderer).boxMaterial.map;
-		// xdMap.wrapS = ClampToEdgeWrapping;
-		// xdMap.wrapT = ClampToEdgeWrapping;
-	}
+// const getMap = (renderer: WebGLRenderer) => {
+// 	if (!xdMap) {
+// 		xdMap = xd(renderer).boxMaterial.map;
+// 		// xdMap.wrapS = ClampToEdgeWrapping;
+// 		// xdMap.wrapT = ClampToEdgeWrapping;
+// 	}
 
-	return xdMap;
-}
-
-const editLines = (code: string, editor: (lines: string[]) => void) => {
-	const lines = code.split('\n');
-	editor(lines);
-	const result = lines.join('\n');
-	return result;
-};
+// 	return xdMap;
+// };
 
 const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 	// return xd(renderer).boxMaterial;
@@ -72,6 +64,7 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 
 					struct Shape {
 						LinearTransform2d worldToFrameTransform;
+						sampler2D bufferSampler;
 					};
 				`,
 				`
@@ -95,10 +88,11 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 					}
 				`,
 				`
-					vec4 shapeColor(Shape shape, sampler2D bufferSampler, vec3 worldPosition) {
+					vec4 shapeColor(Shape shape, vec3 worldPosition) {
 						vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), shape.worldToFrameTransform);
 						if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
-							return texture2D(bufferSampler, worldTexel);
+							//return vec4(1.0, 1.0, 0.0, 1.0);
+							return texture2D(shape.bufferSampler, worldTexel);
 						} else {
 							return vec4(0.0, 0.0, 0.0, 0.0);
 						}
@@ -106,7 +100,6 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 				`,
 				`uniform Circle circles[${constants.circles.limit}];`,
 				'uniform int circlesCount;',
-				'uniform sampler2D tSec;',
 				'uniform Shape shape;'
 			].join('\n'));
 
@@ -115,13 +108,13 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
 					gl_FragColor = mix(gl_FragColor, circleColor, circleColor.a);
 				}
-				vec4 shapeColor = shapeColor(shape, tSec, vWorldPosition);
+				vec4 shapeColor = shapeColor(shape, vWorldPosition);
 				gl_FragColor = mix(gl_FragColor, shapeColor, shapeColor.a);
 			`);
 		});
 
 		uniforms.addShader(shader);
-		shader.uniforms['tSec'] = new Uniform(getMap(renderer));
+		// shader.uniforms['tSec'] = new Uniform(getMap(renderer));
 	};
 
 	return phongMaterial;

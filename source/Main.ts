@@ -29,3 +29,7 @@ export {MapHeightNodeShader} from './nodes/MapHeightNodeShader';
 export {UnitsUtils} from './utils/UnitsUtils';
 export {CancelablePromise} from './utils/CancelablePromise';
 export {XHRUtils} from './utils/XHRUtils';
+export { setupRenderLoop } from './renderer/setupRenderLoop';
+export { RenderEnviroment } from './RenderEnviroment';
+export { DeferredRenderer } from './renderer/DeferredRenderer';
+export { ShaderUniforms } from './uniforms/Uniforms';

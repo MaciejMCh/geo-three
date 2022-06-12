@@ -1,4 +1,4 @@
-import {BufferGeometry, Camera, ExtrudeGeometry, Group, Material, Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene, Shape, ShapeBufferGeometry, Uniform, Vector2, Vector3, WebGLRenderer} from 'three';
+import {BufferGeometry, Camera, Color, ExtrudeGeometry, Group, Material, Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene, Shape, ShapeBufferGeometry, Uniform, Vector2, Vector3, Vector4, WebGLRenderer} from 'three';
 import {OpenStreetMapsProvider} from './providers/OpenStreetMapsProvider';
 import {MapNode} from './nodes/MapNode';
 import {MapHeightNode} from './nodes/MapHeightNode';
@@ -10,10 +10,10 @@ import {MapProvider} from './providers/MapProvider';
 import {LODControl} from './lod/LODControl';
 import {MapMartiniHeightNode} from './nodes/MapMartiniHeightNode';
 import { Geoposition } from './nodes/primitive';
-import { ShaderUniforms } from './uniforms';
-import { updateDeferredGeometry, xd } from './deferredRendering/deferredRendering';
 import { wordSpaceTexelFunction } from './utils/LinearFunction';
 import { numberSpace, transform } from './utils/LinearTransform';
+import { Shapes } from './shapes/Shapes';
+import { RenderEnviroment } from './RenderEnviroment';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -82,8 +82,6 @@ export class MapView extends Mesh
 	 */
 	public root: MapNode = null;
 
-	public readonly uniforms = new ShaderUniforms();
-
 	/**
 	 * Constructor for the map view objects.
 	 *
@@ -91,7 +89,7 @@ export class MapView extends Mesh
 	 * @param provider - Map color tile provider by default a OSM maps provider is used if none specified.
 	 * @param heightProvider - Map height tile provider, by default no height provider is used.
 	 */
-	public constructor(private renderer: WebGLRenderer, root: (number | MapNode) = MapView.PLANAR, provider: MapProvider = new OpenStreetMapsProvider(), heightProvider: MapProvider = null) 
+	public constructor(private readonly renderEnviroment: RenderEnviroment, private renderer: WebGLRenderer, root: (number | MapNode) = MapView.PLANAR, provider: MapProvider = new OpenStreetMapsProvider(), heightProvider: MapProvider = null) 
 	{
 		super(undefined, new MeshBasicMaterial({transparent: true, opacity: 0.0}));
 		this.name = 'mapView';
@@ -135,7 +133,7 @@ export class MapView extends Mesh
 			const rootConstructor = MapView.mapModes.get(root);
 
 			// @ts-ignore
-			root = new rootConstructor(this.uniforms, this.renderer, null, this);
+			root = new rootConstructor(this.renderEnviroment.shaderUniforms, this.renderer, null, this);
 		}
 
 		// Remove old root
@@ -169,15 +167,16 @@ export class MapView extends Mesh
 				];
 
 				vertices.forEach(vertex => {
-					const identity = this.uniforms.create.circle();
-					this.uniforms.update.circle.radius(identity, 200);
-					this.uniforms.update.circle.geoposition(identity, vertex);
+					const identity = this.renderEnviroment.shaderUniforms.create.circle();
+					this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
+					this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 				});
 
 				const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
 				const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);
 				const yFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.y);
-				this.uniforms.uniforms['shape'] = new Uniform({
+				const shape = this.renderEnviroment.deferredRenderer.shapes.makeShape();
+				this.renderEnviroment.shaderUniforms.uniforms['shape'] = new Uniform({
 					worldToFrameTransform: {
 						x: {
 							a: xFunc.a,
@@ -188,6 +187,7 @@ export class MapView extends Mesh
 							b: yFunc.b,
 						},
 					},
+					bufferSampler: shape.bufferSampler,
 				});
 
 				console.log('world space texels xd');
@@ -197,7 +197,7 @@ export class MapView extends Mesh
 				var coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
 				var geomShape = new ShapeBufferGeometry(new Shape(coordinatesList));
 				console.log(geomShape);
-				updateDeferredGeometry(geomShape);
+				// updateDeferredGeometry(geomShape);
 			}, 1000);
 		}
 	}
