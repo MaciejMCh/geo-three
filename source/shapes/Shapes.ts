@@ -47,6 +47,7 @@ export class Shape {
             `;
         };
         const mesh = new Mesh(new ShapeBufferGeometry(), material);
+        mesh.name = `${this.debugIdentity}_simple-geometry-mesh`;
         this.setup.shapeScene.add(mesh);
         this.invalidate();
         return new SimpleGeometry(mesh, this.invalidate);
@@ -67,20 +68,19 @@ const setupShapesRender = (): ShapesRenderSetup => {
     const camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.00001, 1000000 );
     const bufferScene = new Scene();
     bufferScene.name = 'shapes_scene';
-    bufferScene.background = new Color('green');
     const bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
     bufferTexture.texture.name = 'shapes_buffer-texture';
     return { bufferRenderTarget: bufferTexture, camera, shapesStackScene: bufferScene };
 };
 
-const makeShapeLayer = (bufferTexture: Texture) => {
+const makeShapeLayer = (debugIdentity: string, bufferTexture: Texture) => {
     const geometry = new ShapeBufferGeometry(new ThreeShape([
         new Vector2(1, 1),
         new Vector2(1, -1),
         new Vector2(-1, -1),
         new Vector2(-1, 1),
     ]));
-    const material = new MeshBasicMaterial({ color: 0xff0000 });
+    const material = new MeshBasicMaterial({ color: 0xff0000, depthTest: false, transparent: true });
 
     material.onBeforeCompile = shader => {
         shader.vertexShader = `
@@ -105,6 +105,7 @@ const makeShapeLayer = (bufferTexture: Texture) => {
     };
 
     const mesh = new Mesh(geometry, material);
+    mesh.name = `${debugIdentity}-shape-layer-mesh`;
 
     return { mesh };
 };
@@ -113,7 +114,6 @@ const setupShapeRender = (debugIdentity: string): ShapeRenderSetup => {
     const camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.00001, 1000000 );
     const bufferScene = new Scene();
     bufferScene.name = `shape-${debugIdentity}_scene`;
-    bufferScene.background = new Color('blue');
     const bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
     bufferTexture.texture.name = `shape-${debugIdentity}_buffer-texture`;
     return { bufferRenderTarget: bufferTexture, camera, shapeScene: bufferScene };
@@ -133,8 +133,9 @@ export class Shapes {
     }
 
     makeShape = (debugIdentity: string) => {
+        console.log('make shape', debugIdentity);
         const setup = setupShapeRender(debugIdentity);
-        const shapeLayer = makeShapeLayer(setup.bufferRenderTarget.texture);
+        const shapeLayer = makeShapeLayer(debugIdentity, setup.bufferRenderTarget.texture);
         this.setup.shapesStackScene.add(shapeLayer.mesh);
         
         const shape = new Shape(debugIdentity, setup);
@@ -147,7 +148,7 @@ export class Shapes {
             shape.render(webglRenderer);
         });
 
-        console.log('render shapes');
+        console.log('render shapes', this.setup.shapesStackScene.children);
         webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
         webglRenderer.render(this.setup.shapesStackScene, this.setup.camera);
     };

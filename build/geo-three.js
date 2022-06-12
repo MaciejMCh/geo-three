@@ -1459,25 +1459,32 @@
 	            this.root.mapView = this;
 	            this.add(this.root);
 	            setTimeout(() => {
-	                console.log('begin');
-	                const vertices = [
-	                    new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
-	                    new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
-	                    new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
-	                ];
-	                vertices.forEach(vertex => {
-	                    const identity = this.renderEnviroment.shaderUniforms.create.circle();
-	                    this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
-	                    this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
-	                });
 	                const shapesTexelWorldSpace = numberSpace.rectangleWorldTexels(new Geoposition({ longitude: 58.25307378740236, latitude: 23.58640578797679 }), new Geoposition({ longitude: 58.32039938153885, latitude: 23.61614678270696 }));
 	                const xFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.x);
 	                const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
 	                const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
 	                this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform);
-	                const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape('test-polygon');
-	                const geometryHandle = polygonShape.useSimpleGeometry();
-	                geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+	                const displayTriangle = (name, vertices) => {
+	                    vertices.forEach(vertex => {
+	                        const identity = this.renderEnviroment.shaderUniforms.create.circle();
+	                        this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
+	                        this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
+	                    });
+	                    const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
+	                    const geometryHandle = polygonShape.useSimpleGeometry();
+	                    geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+	                };
+	                displayTriangle('first', [
+	                    new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
+	                    new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
+	                    new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
+	                ]);
+	                displayTriangle('second', [
+	                    new Geoposition({ longitude: 58.278255654, latitude: 23.604672008 }),
+	                    new Geoposition({ longitude: 58.288468354, latitude: 23.606240162 }),
+	                    new Geoposition({ longitude: 58.287581720, latitude: 23.596895216 }),
+	                    new Geoposition({ longitude: 58.276974961, latitude: 23.593147083 }),
+	                ]);
 	            }, 1000);
 	        }
 	    }
@@ -2081,6 +2088,7 @@
             `;
 	            };
 	            const mesh = new three.Mesh(new three.ShapeBufferGeometry(), material);
+	            mesh.name = `${this.debugIdentity}_simple-geometry-mesh`;
 	            this.setup.shapeScene.add(mesh);
 	            this.invalidate();
 	            return new SimpleGeometry(mesh, this.invalidate);
@@ -2094,19 +2102,18 @@
 	    const camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
 	    const bufferScene = new three.Scene();
 	    bufferScene.name = 'shapes_scene';
-	    bufferScene.background = new three.Color('green');
 	    const bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
 	    bufferTexture.texture.name = 'shapes_buffer-texture';
 	    return { bufferRenderTarget: bufferTexture, camera, shapesStackScene: bufferScene };
 	};
-	const makeShapeLayer = (bufferTexture) => {
+	const makeShapeLayer = (debugIdentity, bufferTexture) => {
 	    const geometry = new three.ShapeBufferGeometry(new three.Shape([
 	        new three.Vector2(1, 1),
 	        new three.Vector2(1, -1),
 	        new three.Vector2(-1, -1),
 	        new three.Vector2(-1, 1),
 	    ]));
-	    const material = new three.MeshBasicMaterial({ color: 0xff0000 });
+	    const material = new three.MeshBasicMaterial({ color: 0xff0000, depthTest: false, transparent: true });
 	    material.onBeforeCompile = shader => {
 	        shader.vertexShader = `
             varying vec2 vTexel;
@@ -2127,13 +2134,13 @@
 	        shader.uniforms['uBufferSampler'] = new three.Uniform(bufferTexture);
 	    };
 	    const mesh = new three.Mesh(geometry, material);
+	    mesh.name = `${debugIdentity}-shape-layer-mesh`;
 	    return { mesh };
 	};
 	const setupShapeRender = (debugIdentity) => {
 	    const camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
 	    const bufferScene = new three.Scene();
 	    bufferScene.name = `shape-${debugIdentity}_scene`;
-	    bufferScene.background = new three.Color('blue');
 	    const bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
 	    bufferTexture.texture.name = `shape-${debugIdentity}_buffer-texture`;
 	    return { bufferRenderTarget: bufferTexture, camera, shapeScene: bufferScene };
@@ -2142,8 +2149,9 @@
 	    constructor() {
 	        this.shapes = [];
 	        this.makeShape = (debugIdentity) => {
+	            console.log('make shape', debugIdentity);
 	            const setup = setupShapeRender(debugIdentity);
-	            const shapeLayer = makeShapeLayer(setup.bufferRenderTarget.texture);
+	            const shapeLayer = makeShapeLayer(debugIdentity, setup.bufferRenderTarget.texture);
 	            this.setup.shapesStackScene.add(shapeLayer.mesh);
 	            const shape = new Shape(debugIdentity, setup);
 	            this.shapes.push(shape);
@@ -2153,7 +2161,7 @@
 	            this.shapes.forEach(shape => {
 	                shape.render(webglRenderer);
 	            });
-	            console.log('render shapes');
+	            console.log('render shapes', this.setup.shapesStackScene.children);
 	            webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
 	            webglRenderer.render(this.setup.shapesStackScene, this.setup.camera);
 	        };

@@ -160,50 +160,6 @@ export class MapView extends Mesh
 			this.add(this.root);
 
 			setTimeout(() => {
-				console.log('begin');
-				const vertices = [
-					new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
-					new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
-					new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
-				];
-
-				vertices.forEach(vertex => {
-					const identity = this.renderEnviroment.shaderUniforms.create.circle();
-					this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
-					this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
-				});
-
-				//const polygon = this.renderEnviroment.makeShape();
-				//polygon.updateGeometry(new PolygonGeometry(vertices));
-
-				// const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
-				// const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);
-				// const yFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.y);
-				// const shape = this.renderEnviroment.deferredRenderer.shapes.makeShape();
-				// this.renderEnviroment.shaderUniforms.uniforms['shape'] = new Uniform({
-				// 	worldToFrameTransform: {
-				// 		x: {
-				// 			a: xFunc.a,
-				// 			b: xFunc.b,
-				// 		},
-				// 		y: {
-				// 			a: yFunc.a,
-				// 			b: yFunc.b,
-				// 		},
-				// 	},
-				// 	bufferSampler: shape.bufferSampler,
-				// });
-
-				// console.log('world space texels xd');
-				// const frameSpaceVertices = transform.vertices(vertices, geometryTexelWorldSpace, numberSpace.frame2d);
-				// console.log(frameSpaceVertices);
-
-				// var coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
-				// var geomShape = new ShapeBufferGeometry(new Shape(coordinatesList));
-				// shape.updateGeometry(geomShape);
-				// console.log(geomShape);
-
-				// const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
 				const shapesTexelWorldSpace = numberSpace.rectangleWorldTexels(
 					new Geoposition({ longitude: 58.25307378740236, latitude: 23.58640578797679 }),
 					new Geoposition({ longitude: 58.32039938153885, latitude: 23.61614678270696 }),
@@ -213,9 +169,30 @@ export class MapView extends Mesh
 				const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
 				this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform);
 				
-				const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape('test-polygon');
-				const geometryHandle = polygonShape.useSimpleGeometry();
-				geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+				const displayTriangle = (name: string, vertices: Geoposition[]) => {
+					vertices.forEach(vertex => {
+						const identity = this.renderEnviroment.shaderUniforms.create.circle();
+						this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
+						this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
+					});
+
+					const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
+					const geometryHandle = polygonShape.useSimpleGeometry();
+					geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+				};
+				
+				displayTriangle('first', [
+					new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
+					new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
+					new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
+				]);
+
+				displayTriangle('second', [
+					new Geoposition({ longitude: 58.278255654, latitude: 23.604672008 }),
+					new Geoposition({ longitude: 58.288468354, latitude: 23.606240162 }),
+					new Geoposition({ longitude: 58.287581720, latitude: 23.596895216 }),
+					new Geoposition({ longitude: 58.276974961, latitude: 23.593147083 }),
+				]);
 			}, 1000);
 		}
 	}
