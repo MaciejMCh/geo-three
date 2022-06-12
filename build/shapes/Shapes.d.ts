@@ -7,15 +7,18 @@ declare type ShapeRenderSetup = {
 };
 declare class SimpleGeometry {
     private mesh;
-    constructor(mesh: Mesh);
+    private invalidate;
+    constructor(mesh: Mesh, invalidate: () => void);
     updateGeometry: (geometry: Geometry) => void;
 }
 export declare class Shape {
     private debugIdentity;
     private setup;
+    private needsRender;
     constructor(debugIdentity: string, setup: ShapeRenderSetup);
     render: (webglRenderer: WebGLRenderer) => void;
     useSimpleGeometry: () => SimpleGeometry;
+    invalidate: () => void;
 }
 export declare class Shapes {
     private readonly shapes;

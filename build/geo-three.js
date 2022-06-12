@@ -2043,10 +2043,12 @@
 	}
 
 	class SimpleGeometry {
-	    constructor(mesh) {
+	    constructor(mesh, invalidate) {
 	        this.mesh = mesh;
+	        this.invalidate = invalidate;
 	        this.updateGeometry = (geometry) => {
 	            this.mesh.geometry = geometry.shapeGeometry;
+	            this.invalidate();
 	        };
 	    }
 	}
@@ -2054,10 +2056,15 @@
 	    constructor(debugIdentity, setup) {
 	        this.debugIdentity = debugIdentity;
 	        this.setup = setup;
+	        this.needsRender = true;
 	        this.render = (webglRenderer) => {
+	            if (!this.needsRender) {
+	                return;
+	            }
 	            console.log('render shape', this.debugIdentity, this.setup.shapeScene.children);
 	            webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
 	            webglRenderer.render(this.setup.shapeScene, this.setup.camera);
+	            this.needsRender = false;
 	        };
 	        this.useSimpleGeometry = () => {
 	            const material = new three.MeshBasicMaterial({ color: 0xff0000 });
@@ -2075,7 +2082,11 @@
 	            };
 	            const mesh = new three.Mesh(new three.ShapeBufferGeometry(), material);
 	            this.setup.shapeScene.add(mesh);
-	            return new SimpleGeometry(mesh);
+	            this.invalidate();
+	            return new SimpleGeometry(mesh, this.invalidate);
+	        };
+	        this.invalidate = () => {
+	            this.needsRender = true;
 	        };
 	    }
 	}

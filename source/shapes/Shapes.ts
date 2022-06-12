@@ -8,20 +8,27 @@ type ShapeRenderSetup = {
 };
 
 class SimpleGeometry {
-    constructor(private mesh: Mesh) {}
+    constructor(private mesh: Mesh, private invalidate: () => void) {}
 
     updateGeometry = (geometry: Geometry) => {
         this.mesh.geometry = geometry.shapeGeometry;
+        this.invalidate();
     };
 }
 
 export class Shape {
+    private needsRender = true;
+
     constructor(private debugIdentity: string, private setup: ShapeRenderSetup) {}
 
     render = (webglRenderer: WebGLRenderer) => {
+        if (!this.needsRender) {
+            return;
+        }
         console.log('render shape', this.debugIdentity, this.setup.shapeScene.children);
         webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
         webglRenderer.render(this.setup.shapeScene, this.setup.camera);
+        this.needsRender = false;
     };
 
     useSimpleGeometry = (): SimpleGeometry => {
@@ -41,7 +48,12 @@ export class Shape {
         };
         const mesh = new Mesh(new ShapeBufferGeometry(), material);
         this.setup.shapeScene.add(mesh);
-        return new SimpleGeometry(mesh);
+        this.invalidate();
+        return new SimpleGeometry(mesh, this.invalidate);
+    };
+
+    invalidate = () => {
+        this.needsRender = true;
     };
 }
 
