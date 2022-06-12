@@ -2093,7 +2093,7 @@
 	        };
 	        this.usePathGeometry = () => {
 	            const geometry = new three.EdgesGeometry();
-	            const material = new three.LineBasicMaterial({ color: 0xff00ff, linewidth: 5 });
+	            const material = new three.LineBasicMaterial({ color: 0xff00ff });
 	            const wireframe = new three.LineSegments(geometry, material);
 	            wireframe.name = `${this.debugIdentity}_path-geometry-mesh`;
 	            this.setup.shapeScene.add(wireframe);

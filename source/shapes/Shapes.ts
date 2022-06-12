@@ -51,7 +51,7 @@ export class Shape {
 
     usePathGeometry = (): PathGeometry => {
         const geometry = new EdgesGeometry();
-        const material = new LineBasicMaterial({ color: 0xff00ff,5 });
+        const material = new LineBasicMaterial({ color: 0xff00ff });
         const wireframe = new LineSegments(geometry, material);
         wireframe.name = `${this.debugIdentity}_path-geometry-mesh`;
         this.setup.shapeScene.add(wireframe);

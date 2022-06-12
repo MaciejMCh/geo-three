@@ -6,7 +6,7 @@ declare type ShapeRenderSetup = {
     camera: Camera;
 };
 declare class SimpleGeometry {
-    private mesh;
+    private readonly mesh;
     private invalidate;
     constructor(mesh: Mesh, invalidate: () => void);
     updateGeometry: (geometry: Geometry) => void;
