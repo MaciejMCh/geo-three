@@ -178,10 +178,16 @@ export class MapView extends Mesh
 				const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);
 				const yFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.y);
 				this.uniforms.uniforms['shape'] = new Uniform({
-					aX: xFunc.a,
-					bX: xFunc.b,
-					aY: yFunc.a,
-					bY: yFunc.b,
+					worldToFrameTransform: {
+						x: {
+							a: xFunc.a,
+							b: xFunc.b,
+						},
+						y: {
+							a: yFunc.a,
+							b: yFunc.b,
+						},
+					},
 				});
 
 				console.log('world space texels xd');

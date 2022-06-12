@@ -582,12 +582,27 @@
 						float radius;
 					};
 
-					struct Shape {
-						float aX;
-						float bX;
-						float aY;
-						float bY;
+					struct LinearFunction {
+						float a;
+						float b;
 					};
+
+					struct LinearTransform2d {
+						LinearFunction x;
+						LinearFunction y;
+					};
+
+					struct Shape {
+						LinearTransform2d worldToFrameTransform;
+					};
+				`,
+	                `
+					vec2 transformLinear(vec2 vector, LinearTransform2d linearTransform) {
+						return vec2(
+							(vector.x * linearTransform.x.a) + linearTransform.x.b,
+							(vector.y * linearTransform.y.a) + linearTransform.y.b
+						);
+					}
 				`,
 	                `
 					vec4 circleColor(Circle circle, vec3 worldPosition, float depth) {
@@ -603,10 +618,7 @@
 				`,
 	                `
 					vec4 shapeColor(Shape shape, sampler2D bufferSampler, vec3 worldPosition) {
-						vec2 worldTexel = vec2(
-							(worldPosition.x * shape.aX) + shape.bX,
-							(worldPosition.z * shape.aY) + shape.bY
-						);
+						vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), shape.worldToFrameTransform);
 						if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
 							return texture2D(bufferSampler, worldTexel);
 						} else {
@@ -1597,10 +1609,16 @@
 	                const xFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.x);
 	                const yFunc = wordSpaceTexelFunction(geometryTexelWorldSpace.y);
 	                this.uniforms.uniforms['shape'] = new THREE.Uniform({
-	                    aX: xFunc.a,
-	                    bX: xFunc.b,
-	                    aY: yFunc.a,
-	                    bY: yFunc.b,
+	                    worldToFrameTransform: {
+	                        x: {
+	                            a: xFunc.a,
+	                            b: xFunc.b,
+	                        },
+	                        y: {
+	                            a: yFunc.a,
+	                            b: yFunc.b,
+	                        },
+	                    },
 	                });
 	                console.log('world space texels xd');
 	                const frameSpaceVertices = transform.vertices(vertices, geometryTexelWorldSpace, numberSpace.frame2d);
