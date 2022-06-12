@@ -522,28 +522,24 @@
 					}
 				`,
 	                `
-					vec4 shapeColor(Shape shape, vec3 worldPosition) {
-						return vec4(1.0, 1.0, 1.0, 1.0);
-						// vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), shape.worldToFrameTransform);
-						// if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
-						// 	//return vec4(1.0, 1.0, 0.0, 1.0);
-						// 	return texture2D(shape.bufferSampler, worldTexel);
-						// } else {
-						// 	return vec4(0.0, 0.0, 0.0, 0.0);
-						// }
+					vec4 shapesColor(LinearTransform2d worldToFrameTransform, vec3 worldPosition, sampler2D bufferSampler) {
+						vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), worldToFrameTransform);
+						if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
+							return vec4(1.0, 0.0, 1.0, 0.5);
+							return texture2D(bufferSampler, worldTexel);
+						} else {
+							return vec4(0.0, 0.0, 0.0, 0.0);
+						}
 					}
 				`,
 	                `uniform Circle circles[${constants.circles.limit}];`,
 	                'uniform int circlesCount;',
-	                `uniform Shape shapes[${constants.shapes.limit}];`,
-	                'uniform int shapesCount;'
+	                'uniform LinearTransform2d uShapesWorldToFrameTransform;',
+	                'uniform sampler2D uShapesBufferSampler;',
 	            ].join('\n'));
 	            lines.splice(lines.length - 1, 0, `
-				for (int i = 0; i <= shapesCount; i++) {
-					Shape shape = shapes[0];
-				 	//vec4 eachShapeColor = shapeColor(shapes[i], vWorldPosition);
-				 	//gl_FragColor = mix(gl_FragColor, shapeColor, shapeColor.a);
-				}
+				vec4 shapesColor = shapesColor(uShapesWorldToFrameTransform, vWorldPosition, uShapesBufferSampler);
+				gl_FragColor = mix(gl_FragColor, shapesColor, shapesColor.a);
 
 				for (int i = 0; i <= circlesCount; i++) {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);
@@ -1345,11 +1341,62 @@
 	    }
 	    get worldTexel() {
 	        if (!this._worldTexel) {
-	            this._worldTexel = new three.Vector2(this._worldPosition.x, this.worldPosition.z);
+	            const worldPosition = this.worldPosition;
+	            this._worldTexel = new three.Vector2(worldPosition.x, worldPosition.z);
 	        }
 	        return this._worldTexel;
 	    }
 	}
+
+	const wordSpaceTexelFunction = (linearSpace) => {
+	    const diff = linearSpace.lowerBound - linearSpace.upperBound;
+	    const a = -1 / diff;
+	    const b = linearSpace.lowerBound / diff;
+	    return { a, b };
+	};
+
+	class LinearSpace {
+	    constructor(lowerBound, upperBound) {
+	        this.lowerBound = lowerBound;
+	        this.upperBound = upperBound;
+	        this.convert = (value, to) => {
+	            const progress = (this.upperBound - value) / this.size;
+	            return to.lowerBound + (to.size * progress);
+	        };
+	    }
+	    get size() {
+	        if (this._size === undefined) {
+	            this._size = this.upperBound - this.lowerBound;
+	        }
+	        return this._size;
+	    }
+	}
+	const frameNumberSpace = new LinearSpace(-1, 1);
+	const frameNumberSpace2d = { x: frameNumberSpace, y: frameNumberSpace };
+	const numberSpace = {
+	    frame: frameNumberSpace,
+	    frame2d: frameNumberSpace2d,
+	    geometryWorldTexels: (vertices) => {
+	        const worldSpaceTexelsXs = vertices.map(vertex => vertex.worldTexel.x);
+	        const worldSpaceTexelsYs = vertices.map(vertex => vertex.worldTexel.y);
+	        const minX = Math.min(...worldSpaceTexelsXs);
+	        const maxX = Math.max(...worldSpaceTexelsXs);
+	        const minY = Math.min(...worldSpaceTexelsYs);
+	        const maxY = Math.max(...worldSpaceTexelsYs);
+	        return {
+	            x: new LinearSpace(minX, maxX),
+	            y: new LinearSpace(minY, maxY),
+	        };
+	    },
+	    rectangleWorldTexels: (lowerLeft, upperRight) => {
+	        const lowerTexel = lowerLeft.worldTexel;
+	        const upperTexel = upperRight.worldTexel;
+	        return {
+	            x: new LinearSpace(lowerTexel.x, upperTexel.x),
+	            y: new LinearSpace(lowerTexel.y, upperTexel.y),
+	        };
+	    },
+	};
 
 	class MapView extends three.Mesh {
 	    constructor(renderEnviroment, renderer, root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
@@ -1399,6 +1446,11 @@
 	                    this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
 	                    this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 	                });
+	                const shapesTexelWorldSpace = numberSpace.rectangleWorldTexels(new Geoposition({ longitude: 58.25307378740236, latitude: 23.58640578797679 }), new Geoposition({ longitude: 58.32039938153885, latitude: 23.61614678270696 }));
+	                const xFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.x);
+	                const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
+	                const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
+	                this.renderEnviroment.setupShapes(shapesTexelWorldTransform);
 	            }, 1000);
 	        }
 	    }
@@ -1950,27 +2002,13 @@
 	    animate();
 	};
 
-	class ShapeDrawable {
-	    constructor(shape, drawableIdentity, shaderUniforms) {
-	        this.shape = shape;
-	        this.drawableIdentity = drawableIdentity;
-	        this.shaderUniforms = shaderUniforms;
-	        this.updateGeometry = (geometry) => {
-	            this.shaderUniforms.update.shape.worldToFrameTransform(this.drawableIdentity, geometry.worldToFrameTransform);
-	            this.shape.updateGeometry(geometry.shapeGeometry);
-	        };
-	    }
-	}
-
 	class RenderEnviroment {
 	    constructor(webGlRenderer, deferredRenderer, shaderUniforms) {
 	        this.webGlRenderer = webGlRenderer;
 	        this.deferredRenderer = deferredRenderer;
 	        this.shaderUniforms = shaderUniforms;
-	        this.makeShape = () => {
-	            const shape = this.deferredRenderer.shapes.makeShape();
-	            const shapeUniformIdentity = this.shaderUniforms.create.shape(shape.bufferSampler);
-	            return new ShapeDrawable(shape, shapeUniformIdentity, this.shaderUniforms);
+	        this.setupShapes = (texelWorldTransform) => {
+	            this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
 	        };
 	    }
 	}
@@ -2078,22 +2116,12 @@
 	    constructor() {
 	        this.circlesByIds = {};
 	        this.circlesCount = 0;
-	        this.shapesByIds = {};
-	        this.shapesCount = 0;
 	        this.create = {
 	            circle: () => {
 	                const identity = new DrawableIdentity();
 	                this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
 	                this.circlesCount += 1;
 	                this.uniforms['circlesCount'].value = this.circlesCount;
-	                return identity;
-	            },
-	            shape: (texture) => {
-	                const identity = new DrawableIdentity();
-	                this.shapesByIds[identity.raw] = this.uniforms['shapes'].value[this.shapesCount];
-	                this.shapesCount += 1;
-	                this.uniforms['shapesCount'].value = this.shapesCount;
-	                this.uniforms['shapes'].value[this.shapesCount]['bufferSampler'] = texture;
 	                return identity;
 	            },
 	        };
@@ -2106,9 +2134,9 @@
 	                    this.circlesByIds[identity.raw]['radius'] = radius;
 	                },
 	            },
-	            shape: {
-	                worldToFrameTransform: (identity, worldToFrameTransform) => {
-	                    this.shapesByIds[identity.raw]['worldToFrameTransform'] = {
+	            shapes: {
+	                worldToFrameTransform: (worldToFrameTransform) => {
+	                    this.uniforms['uShapesWorldToFrameTransform'].value = {
 	                        x: {
 	                            a: worldToFrameTransform.x.a,
 	                            b: worldToFrameTransform.x.b,
@@ -2118,6 +2146,9 @@
 	                            b: worldToFrameTransform.y.b,
 	                        },
 	                    };
+	                },
+	                bufferTexture: (shapesBufferTexture) => {
+	                    this.uniforms['uShapesBufferSampler'] = new three.Uniform(shapesBufferTexture);
 	                },
 	            },
 	        };
@@ -2148,13 +2179,6 @@
 	            worldOrigin: new three.Vector3(),
 	            radius: 0,
 	        });
-	        this.makeBlankShape = (texture) => ({
-	            worldToFrameTransform: {
-	                x: { a: 0, b: 0 },
-	                y: { a: 0, b: 0 },
-	            },
-	            bufferSampler: texture,
-	        });
 	        this.setupCircles = (uniforms) => {
 	            const circles = [];
 	            for (let index = 0; index < constants.circles.limit; index++) {
@@ -2164,13 +2188,10 @@
 	            uniforms['circlesCount'] = new three.Uniform(0);
 	        };
 	        this.setupShapes = (uniforms) => {
-	            const shapes = [];
-	            const renderTarget = new three.WebGLRenderTarget(16, 16, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
-	            for (let index = 0; index < constants.shapes.limit; index++) {
-	                shapes.push(this.makeBlankShape(renderTarget.texture));
-	            }
-	            uniforms['shapes'] = new three.Uniform(shapes);
-	            uniforms['shapesCount'] = new three.Uniform(0);
+	            uniforms['uShapesWorldToFrameTransform'] = new three.Uniform({
+	                x: { a: 0, b: 0 },
+	                y: { a: 0, b: 0 },
+	            });
 	        };
 	    }
 	}

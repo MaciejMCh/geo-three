@@ -15,6 +15,7 @@ export declare const numberSpace: {
     frame: LinearSpace;
     frame2d: LinearSpace2d;
     geometryWorldTexels: (vertices: Geoposition[]) => LinearSpace2d;
+    rectangleWorldTexels: (lowerLeft: Geoposition, upperRight: Geoposition) => LinearSpace2d;
 };
 export declare const transform: {
     vertices: (vertices: Geoposition[], from: LinearSpace2d, to: LinearSpace2d) => {

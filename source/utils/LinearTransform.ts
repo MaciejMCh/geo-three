@@ -44,6 +44,15 @@ export const numberSpace = {
             y: new LinearSpace(minY, maxY),
         };
     },
+    rectangleWorldTexels: (lowerLeft: Geoposition, upperRight: Geoposition): LinearSpace2d => {
+        const lowerTexel = lowerLeft.worldTexel;
+        const upperTexel = upperRight.worldTexel;
+        
+        return {
+            x: new LinearSpace(lowerTexel.x, upperTexel.x),
+            y: new LinearSpace(lowerTexel.y, upperTexel.y),
+        };
+    },
 };
 
 export const transform = {

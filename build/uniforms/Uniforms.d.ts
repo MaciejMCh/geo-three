@@ -11,19 +11,17 @@ export declare class ShaderUniforms {
     uniforms: Uniforms;
     private circlesByIds;
     private circlesCount;
-    private shapesByIds;
-    private shapesCount;
     create: {
         circle: () => DrawableIdentity;
-        shape: (texture: Texture) => DrawableIdentity;
     };
     update: {
         circle: {
             geoposition: (identity: DrawableIdentity, geoposition: Geoposition) => void;
             radius: (identity: DrawableIdentity, radius: number) => void;
         };
-        shape: {
-            worldToFrameTransform: (identity: DrawableIdentity, worldToFrameTransform: LinearTransform2d) => void;
+        shapes: {
+            worldToFrameTransform: (worldToFrameTransform: LinearTransform2d) => void;
+            bufferTexture: (shapesBufferTexture: Texture) => void;
         };
     };
     remove: {
@@ -32,7 +30,6 @@ export declare class ShaderUniforms {
     addShader: (shader: Shader) => void;
     private setup;
     private makeBlankCircle;
-    private makeBlankShape;
     private setupCircles;
     private setupShapes;
 }

@@ -16,24 +16,12 @@ export class ShaderUniforms {
 
     private circlesCount = 0;
 
-    private shapesByIds: Record<string, object> = {};
-
-    private shapesCount = 0;
-
     create = {
         circle: () => {
             const identity = new DrawableIdentity();
             this.circlesByIds[identity.raw] = this.uniforms['circles'].value[this.circlesCount];
             this.circlesCount += 1;
             this.uniforms['circlesCount'].value = this.circlesCount;
-            return identity;
-        },
-        shape: (texture: Texture) => {
-            const identity = new DrawableIdentity();
-            this.shapesByIds[identity.raw] = this.uniforms['shapes'].value[this.shapesCount];
-            this.shapesCount += 1;
-            this.uniforms['shapesCount'].value = this.shapesCount;
-            this.uniforms['shapes'].value[this.shapesCount]['bufferSampler'] = texture;
             return identity;
         },
     };
@@ -47,9 +35,9 @@ export class ShaderUniforms {
                 this.circlesByIds[identity.raw]['radius'] = radius;
             },
         },
-        shape: {
-            worldToFrameTransform: (identity: DrawableIdentity, worldToFrameTransform: LinearTransform2d) => {
-                this.shapesByIds[identity.raw]['worldToFrameTransform'] = {
+        shapes: {
+            worldToFrameTransform: (worldToFrameTransform: LinearTransform2d) => {
+                this.uniforms['uShapesWorldToFrameTransform'].value = {
                     x: {
                         a: worldToFrameTransform.x.a,
                         b: worldToFrameTransform.x.b,
@@ -59,6 +47,9 @@ export class ShaderUniforms {
                         b: worldToFrameTransform.y.b,
                     },
                 };
+            },
+            bufferTexture: (shapesBufferTexture: Texture) => {
+                this.uniforms['uShapesBufferSampler'] = new Uniform(shapesBufferTexture);
             },
         },
     };
@@ -96,14 +87,6 @@ export class ShaderUniforms {
         radius: 0,
     });
 
-    private makeBlankShape = (texture: Texture) => ({
-        worldToFrameTransform: {
-            x: { a: 0, b: 0 },
-            y: { a: 0, b: 0 },
-        },
-        bufferSampler: texture,
-    });
-
     private setupCircles = (uniforms: Uniforms) => {
         const circles: object[] = [];
         for (let index = 0; index < constants.circles.limit; index++) {
@@ -114,12 +97,9 @@ export class ShaderUniforms {
     };
 
     private setupShapes = (uniforms: Uniforms) => {
-        const shapes: object[] = [];
-        const renderTarget = new WebGLRenderTarget(16, 16, { minFilter: LinearFilter, magFilter: NearestFilter });
-        for (let index = 0; index < constants.shapes.limit; index++) {
-            shapes.push(this.makeBlankShape(renderTarget.texture));
-        }
-		uniforms['shapes'] = new Uniform(shapes);
-        uniforms['shapesCount'] = new Uniform(0);
+		uniforms['uShapesWorldToFrameTransform'] = new Uniform({
+            x: { a: 0, b: 0 },
+            y: { a: 0, b: 0 },
+        });
     };
 }

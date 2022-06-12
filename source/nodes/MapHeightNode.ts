@@ -88,29 +88,25 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 					}
 				`,
 				`
-					vec4 shapeColor(Shape shape, vec3 worldPosition) {
-						return vec4(1.0, 1.0, 1.0, 1.0);
-						// vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), shape.worldToFrameTransform);
-						// if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
-						// 	//return vec4(1.0, 1.0, 0.0, 1.0);
-						// 	return texture2D(shape.bufferSampler, worldTexel);
-						// } else {
-						// 	return vec4(0.0, 0.0, 0.0, 0.0);
-						// }
+					vec4 shapesColor(LinearTransform2d worldToFrameTransform, vec3 worldPosition, sampler2D bufferSampler) {
+						vec2 worldTexel = transformLinear(vec2(worldPosition.x, worldPosition.z), worldToFrameTransform);
+						if (worldTexel.x > 0.0 && worldTexel.x < 1.0 && worldTexel.y > 0.0 && worldTexel.y < 1.0) {
+							return vec4(1.0, 0.0, 1.0, 0.5);
+							return texture2D(bufferSampler, worldTexel);
+						} else {
+							return vec4(0.0, 0.0, 0.0, 0.0);
+						}
 					}
 				`,
 				`uniform Circle circles[${constants.circles.limit}];`,
 				'uniform int circlesCount;',
-				`uniform Shape shapes[${constants.shapes.limit}];`,
-				'uniform int shapesCount;'
+				'uniform LinearTransform2d uShapesWorldToFrameTransform;',
+				'uniform sampler2D uShapesBufferSampler;',
 			].join('\n'));
 
 			lines.splice(lines.length - 1, 0, `
-				for (int i = 0; i <= shapesCount; i++) {
-					Shape shape = shapes[0];
-				 	//vec4 eachShapeColor = shapeColor(shapes[i], vWorldPosition);
-				 	//gl_FragColor = mix(gl_FragColor, shapeColor, shapeColor.a);
-				}
+				vec4 shapesColor = shapesColor(uShapesWorldToFrameTransform, vWorldPosition, uShapesBufferSampler);
+				gl_FragColor = mix(gl_FragColor, shapesColor, shapesColor.a);
 
 				for (int i = 0; i <= circlesCount; i++) {
 					vec4 circleColor = circleColor(circles[i], vWorldPosition, vDepth);

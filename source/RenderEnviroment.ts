@@ -1,7 +1,7 @@
 import { WebGLRenderer } from 'three';
 import { DeferredRenderer } from './renderer/DeferredRenderer';
-import { ShapeDrawable } from './shapes/ShapeDrawable';
 import { ShaderUniforms } from './uniforms';
+import { LinearTransform2d } from './utils/LinearFunction';
 
 export class RenderEnviroment {
     constructor(
@@ -10,9 +10,7 @@ export class RenderEnviroment {
         public readonly shaderUniforms: ShaderUniforms,
     ) {}
 
-    makeShape = () => {
-        const shape = this.deferredRenderer.shapes.makeShape();
-        const shapeUniformIdentity = this.shaderUniforms.create.shape(shape.bufferSampler);
-        return new ShapeDrawable(shape, shapeUniformIdentity, this.shaderUniforms);
+    setupShapes = (texelWorldTransform: LinearTransform2d) => {
+        this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
     };
 }

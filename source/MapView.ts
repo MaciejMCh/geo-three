@@ -202,6 +202,16 @@ export class MapView extends Mesh
 				// var geomShape = new ShapeBufferGeometry(new Shape(coordinatesList));
 				// shape.updateGeometry(geomShape);
 				// console.log(geomShape);
+
+				// const geometryTexelWorldSpace = numberSpace.geometryWorldTexels(vertices);
+				const shapesTexelWorldSpace = numberSpace.rectangleWorldTexels(
+					new Geoposition({ longitude: 58.25307378740236, latitude: 23.58640578797679 }),
+					new Geoposition({ longitude: 58.32039938153885, latitude: 23.61614678270696 }),
+				);
+				const xFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.x);
+				const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
+				const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
+				this.renderEnviroment.setupShapes(shapesTexelWorldTransform);
 			}, 1000);
 		}
 	}

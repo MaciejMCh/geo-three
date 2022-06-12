@@ -21,7 +21,8 @@ export class Geoposition {
 
     get worldTexel() {
         if (!this._worldTexel) {
-            this._worldTexel = new Vector2(this._worldPosition.x, this.worldPosition.z);
+            const worldPosition = this.worldPosition;
+            this._worldTexel = new Vector2(worldPosition.x, worldPosition.z);
         }
 
         return this._worldTexel;
