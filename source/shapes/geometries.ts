@@ -37,7 +37,7 @@ export class PolygonGeometry implements Geometry {
     get shapeGeometry() {
         if (!this._shapeGeometry) {
             const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
-            const coordinatesList = frameSpaceVertices.map(vertex => new Vector2(-vertex.x, -vertex.y));
+            const coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
 
             // const coordinatesList = [ // two vetices
             //     new Vector2(-0.08, -0.80),

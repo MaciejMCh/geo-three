@@ -87,7 +87,7 @@ const makeShapeLayer = (bufferTexture: Texture) => {
             varying vec2 vTexel;
 
             void main() {
-                vTexel = vec2((position.x + 1.0) * 0.5, (position.y + 1.0) * 0.5);
+                vTexel = vec2(1.0 - ((position.x + 1.0) * 0.5), 1.0 - ((position.y + 1.0) * 0.5));
                 gl_Position = vec4(position, 1.0);
             }
         `;

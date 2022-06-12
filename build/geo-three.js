@@ -1414,7 +1414,7 @@
 	    get shapeGeometry() {
 	        if (!this._shapeGeometry) {
 	            const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
-	            const coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(-vertex.x, -vertex.y));
+	            const coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(vertex.x, vertex.y));
 	            console.log('coords', coordinatesList);
 	            this._shapeGeometry = new three.ShapeBufferGeometry(new three.Shape(coordinatesList));
 	        }
@@ -2112,7 +2112,7 @@
             varying vec2 vTexel;
 
             void main() {
-                vTexel = vec2((position.x + 1.0) * 0.5, (position.y + 1.0) * 0.5);
+                vTexel = vec2(1.0 - ((position.x + 1.0) * 0.5), 1.0 - ((position.y + 1.0) * 0.5));
                 gl_Position = vec4(position, 1.0);
             }
         `;
