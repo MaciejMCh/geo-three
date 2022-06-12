@@ -1397,6 +1397,30 @@
 	        };
 	    },
 	};
+	const transform = {
+	    vertices: (vertices, from, to) => vertices
+	        .map(vertex => ({
+	        x: from.x.convert(vertex.worldTexel.x, to.x),
+	        y: from.y.convert(vertex.worldTexel.y, to.y),
+	    })),
+	};
+
+	class PolygonGeometry {
+	    constructor(vertices, geometryTexelWorldSpace, worldToFrameTransform) {
+	        this.vertices = vertices;
+	        this.geometryTexelWorldSpace = geometryTexelWorldSpace;
+	        this.worldToFrameTransform = worldToFrameTransform;
+	    }
+	    get shapeGeometry() {
+	        if (!this._shapeGeometry) {
+	            const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	            const coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(-vertex.x, -vertex.y));
+	            console.log('coords', coordinatesList);
+	            this._shapeGeometry = new three.ShapeBufferGeometry(new three.Shape(coordinatesList));
+	        }
+	        return this._shapeGeometry;
+	    }
+	}
 
 	class MapView extends three.Mesh {
 	    constructor(renderEnviroment, renderer, root = MapView.PLANAR, provider = new OpenStreetMapsProvider(), heightProvider = null) {
@@ -1451,7 +1475,9 @@
 	                const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
 	                const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
 	                this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform);
-	                this.renderEnviroment.deferredRenderer.shapes.makeShape('test-polygon');
+	                const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape('test-polygon');
+	                const geometryHandle = polygonShape.useSimpleGeometry();
+	                geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
 	            }, 1000);
 	        }
 	    }
@@ -2016,14 +2042,40 @@
 	    }
 	}
 
+	class SimpleGeometry {
+	    constructor(mesh) {
+	        this.mesh = mesh;
+	        this.updateGeometry = (geometry) => {
+	            this.mesh.geometry = geometry.shapeGeometry;
+	        };
+	    }
+	}
 	class Shape {
 	    constructor(debugIdentity, setup) {
 	        this.debugIdentity = debugIdentity;
 	        this.setup = setup;
 	        this.render = (webglRenderer) => {
-	            console.log('render shape', this.debugIdentity);
+	            console.log('render shape', this.debugIdentity, this.setup.shapeScene.children);
 	            webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
 	            webglRenderer.render(this.setup.shapeScene, this.setup.camera);
+	        };
+	        this.useSimpleGeometry = () => {
+	            const material = new three.MeshBasicMaterial({ color: 0xff0000 });
+	            material.onBeforeCompile = shader => {
+	                shader.vertexShader = `
+                void main() {
+                    gl_Position = vec4(position, 1.0);
+                }
+            `;
+	                shader.fragmentShader = `
+                void main() {
+                    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                }
+            `;
+	            };
+	            const mesh = new three.Mesh(new three.ShapeBufferGeometry(), material);
+	            this.setup.shapeScene.add(mesh);
+	            return new SimpleGeometry(mesh);
 	        };
 	    }
 	}

@@ -1,5 +1,5 @@
-import { BoxGeometry, BufferAttribute, BufferGeometry, Camera, Color, DoubleSide, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, PlaneBufferGeometry, Scene, ShapeBufferGeometry, Texture, Vector2, WebGLRenderer, WebGLRenderTarget, Shape as ThreeShape, Uniform } from 'three';
-import { editLines } from '../utils/shderEditor';
+import { Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, Scene, ShapeBufferGeometry, Texture, Vector2, WebGLRenderer, WebGLRenderTarget, Shape as ThreeShape, Uniform, BufferGeometry } from 'three';
+import { Geometry } from './geometries';
 
 type ShapeRenderSetup = {
     bufferRenderTarget: WebGLRenderTarget;
@@ -7,13 +7,41 @@ type ShapeRenderSetup = {
     camera: Camera;
 };
 
+class SimpleGeometry {
+    constructor(private mesh: Mesh) {}
+
+    updateGeometry = (geometry: Geometry) => {
+        this.mesh.geometry = geometry.shapeGeometry;
+    };
+}
+
 export class Shape {
     constructor(private debugIdentity: string, private setup: ShapeRenderSetup) {}
 
     render = (webglRenderer: WebGLRenderer) => {
-        console.log('render shape', this.debugIdentity);
+        console.log('render shape', this.debugIdentity, this.setup.shapeScene.children);
         webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
         webglRenderer.render(this.setup.shapeScene, this.setup.camera);
+    };
+
+    useSimpleGeometry = (): SimpleGeometry => {
+        const material = new MeshBasicMaterial({ color: 0xff0000 });
+        material.onBeforeCompile = shader => {
+            shader.vertexShader = `
+                void main() {
+                    gl_Position = vec4(position, 1.0);
+                }
+            `;
+    
+            shader.fragmentShader = `
+                void main() {
+                    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                }
+            `;
+        };
+        const mesh = new Mesh(new ShapeBufferGeometry(), material);
+        this.setup.shapeScene.add(mesh);
+        return new SimpleGeometry(mesh);
     };
 }
 
@@ -40,7 +68,7 @@ const makeShapeLayer = (bufferTexture: Texture) => {
         new Vector2(-1, -1),
         new Vector2(-1, 1),
     ]));
-    const material = new MeshBasicMaterial( { color: 0xff0000 } );
+    const material = new MeshBasicMaterial({ color: 0xff0000 });
 
     material.onBeforeCompile = shader => {
         shader.vertexShader = `
@@ -64,7 +92,7 @@ const makeShapeLayer = (bufferTexture: Texture) => {
         shader.uniforms['uBufferSampler'] = new Uniform(bufferTexture);
     };
 
-    const mesh = new Mesh( geometry, material );
+    const mesh = new Mesh(geometry, material);
 
     return { mesh };
 };
