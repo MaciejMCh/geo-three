@@ -14,7 +14,7 @@ import { wordSpaceTexelFunction } from './utils/LinearFunction';
 import { numberSpace, transform } from './utils/LinearTransform';
 import { Shapes } from './shapes/Shapes';
 import { RenderEnviroment } from './RenderEnviroment';
-import { PolygonGeometry } from './shapes/geometries';
+import { PathGeometry, PolygonGeometry } from './shapes/geometries';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -177,15 +177,17 @@ export class MapView extends Mesh
 					});
 
 					const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
-					const geometryHandle = polygonShape.usePathGeometry();
-					geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+					const geometryHandle = polygonShape.useSimpleGeometry();
+					//geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+					geometryHandle.updateGeometry(new PathGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+					
 				};
 				
-				displayTriangle('first', [
-					new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
-					new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
-					new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
-				]);
+				// displayTriangle('first', [
+				// 	new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
+				// 	new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
+				// 	new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
+				// ]);
 
 				displayTriangle('second', [
 					new Geoposition({ longitude: 58.278255654, latitude: 23.604672008 }),

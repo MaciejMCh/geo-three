@@ -14,3 +14,11 @@ export declare class PolygonGeometry implements Geometry {
     get shapeGeometry(): ShapeBufferGeometry;
     constructor(vertices: Geoposition[], geometryTexelWorldSpace: LinearSpace2d, worldToFrameTransform: LinearTransform2d);
 }
+export declare class PathGeometry implements Geometry {
+    private vertices;
+    private readonly geometryTexelWorldSpace;
+    readonly worldToFrameTransform: LinearTransform2d;
+    private _shapeGeometry;
+    get shapeGeometry(): ShapeBufferGeometry;
+    constructor(vertices: Geoposition[], geometryTexelWorldSpace: LinearSpace2d, worldToFrameTransform: LinearTransform2d);
+}

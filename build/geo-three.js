@@ -1405,7 +1405,7 @@
 	    })),
 	};
 
-	class PolygonGeometry {
+	class PathGeometry$1 {
 	    constructor(vertices, geometryTexelWorldSpace, worldToFrameTransform) {
 	        this.vertices = vertices;
 	        this.geometryTexelWorldSpace = geometryTexelWorldSpace;
@@ -1415,8 +1415,21 @@
 	        if (!this._shapeGeometry) {
 	            const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
 	            const coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(vertex.x, vertex.y));
-	            console.log('coords', coordinatesList);
-	            this._shapeGeometry = new three.ShapeBufferGeometry(new three.Shape(coordinatesList));
+	            const vertices = new Float32Array([
+	                coordinatesList[0].x, coordinatesList[0].y, 0,
+	                coordinatesList[1].x, coordinatesList[1].y, 0,
+	                coordinatesList[0].x + 0.1, coordinatesList[0].y, 0,
+	                coordinatesList[1].x + 0.1, coordinatesList[1].y, 0,
+	            ]);
+	            var indices = new Uint16Array([
+	                0, 1, 2,
+	                1, 3, 2,
+	            ]);
+	            const geometry = new three.BufferGeometry();
+	            geometry.setAttribute('position', new three.BufferAttribute(vertices, 3));
+	            geometry.setIndex(new three.BufferAttribute(indices, 1));
+	            this._shapeGeometry = geometry;
+	            console.log(this._shapeGeometry);
 	        }
 	        return this._shapeGeometry;
 	    }
@@ -1471,14 +1484,9 @@
 	                        this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 	                    });
 	                    const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
-	                    const geometryHandle = polygonShape.usePathGeometry();
-	                    geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+	                    const geometryHandle = polygonShape.useSimpleGeometry();
+	                    geometryHandle.updateGeometry(new PathGeometry$1(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
 	                };
-	                displayTriangle('first', [
-	                    new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
-	                    new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
-	                    new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
-	                ]);
 	                displayTriangle('second', [
 	                    new Geoposition({ longitude: 58.278255654, latitude: 23.604672008 }),
 	                    new Geoposition({ longitude: 58.288468354, latitude: 23.606240162 }),
