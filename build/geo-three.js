@@ -1412,9 +1412,33 @@
 	    vertex: (vertex, from, to) => new three.Vector2(from.x.convert(vertex.x, to.x), from.y.convert(vertex.y, to.y))
 	};
 
+	class Line {
+	    constructor(a, b, c) {
+	        this.a = a;
+	        this.b = b;
+	        this.c = c;
+	        this.intersection = (other) => {
+	            const delta = this.a * other.b - other.a * this.b;
+	            if (delta == 0)
+	                throw new Error('Lines are parallel');
+	            const x = ((other.b * this.c) - (this.b * other.c)) / delta;
+	            const y = ((this.a * other.c) - (other.a * this.c)) / delta;
+	            return new three.Vector2(-x, -y);
+	        };
+	        this.test = (point) => (this.a * point.x) + (this.b * point.y) + this.c;
+	    }
+	}
+	Line.withPoints = (lhs, rhs) => {
+	    console.log('line with points', lhs, rhs);
+	    const a = lhs.y - rhs.y;
+	    const b = rhs.x - lhs.x;
+	    const c = (lhs.x * rhs.y) - (rhs.x * lhs.y);
+	    return new Line(a, b, c);
+	};
 	const v = {
 	    add: (lhs, rhs) => new three.Vector2(lhs.x + rhs.x, lhs.y + rhs.y),
 	    polarToLinear: (angle, length) => new three.Vector2(Math.cos(angle) * length, Math.sin(angle) * length),
+	    diff: (lhs, rhs) => new three.Vector2(lhs.x - rhs.x, lhs.y - rhs.y),
 	};
 	class PathGeometry$1 {
 	    constructor(vertices, geometryTexelWorldSpace, worldToFrameTransform) {
@@ -1424,27 +1448,55 @@
 	    }
 	    get shapeGeometry() {
 	        if (!this._shapeGeometry) {
+	            const l = Line.withPoints(new three.Vector2(0, 1), new three.Vector2(10, -231));
+	            console.log('xdd', l.test(new three.Vector2(10, -231)));
+	            const l1 = Line.withPoints(new three.Vector2(0, 1), new three.Vector2(1, 1));
+	            const l2 = Line.withPoints(new three.Vector2(0, 10), new three.Vector2(1, 9));
+	            console.log('int', l1.intersection(l2));
 	            transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
 	            const coordinatesList = this.vertices.map(vertex => vertex.worldTexel);
 	            console.log(coordinatesList);
 	            const width = 100;
-	            var previousVetex;
+	            var previous;
 	            const verts = [];
 	            const inds = [];
-	            coordinatesList.forEach((vertex, index) => {
-	                const nextVertex = coordinatesList[index + 1];
-	                if (!previousVetex) {
-	                    const angle = Math.atan2((nextVertex.y - vertex.y), nextVertex.x - vertex.x);
-	                    const currentLhsWing = v.add(vertex, v.polarToLinear(angle + (Math.PI * 0.5), width));
-	                    const currentRhsWing = v.add(vertex, v.polarToLinear(angle - (Math.PI * 0.5), width));
-	                    const frameSpaceVertex = transform.vertex(vertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
-	                    const frameSpaceNewVertex = transform.vertex(nextVertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
-	                    const frameSpaceCurrentLhsWing = transform.vertex(currentLhsWing, this.geometryTexelWorldSpace, numberSpace.frame2d);
-	                    const frameSpaceCurrentRhsWing = transform.vertex(currentRhsWing, this.geometryTexelWorldSpace, numberSpace.frame2d);
-	                    verts.push(frameSpaceVertex.x, frameSpaceVertex.y, 0, frameSpaceNewVertex.x, frameSpaceNewVertex.y, 0, frameSpaceCurrentLhsWing.x, frameSpaceCurrentLhsWing.y, 0, frameSpaceCurrentRhsWing.x, frameSpaceCurrentRhsWing.y, 0);
-	                    inds.push(0, 2, 1, 0, 1, 3);
-	                    previousVetex = vertex;
+	            coordinatesList.forEach((currentCore, index) => {
+	                if (index > 1) {
+	                    return;
 	                }
+	                const nextCore = coordinatesList[index + 1];
+	                const normalizedCore = v.diff(nextCore, currentCore);
+	                if (!previous) {
+	                    const angle = Math.atan2((nextCore.y - currentCore.y), nextCore.x - currentCore.x);
+	                    const currentLhsWing = v.add(currentCore, v.polarToLinear(angle + (Math.PI * 0.5), width));
+	                    const currentRhsWing = v.add(currentCore, v.polarToLinear(angle - (Math.PI * 0.5), width));
+	                    [currentCore, nextCore, currentLhsWing, currentRhsWing].forEach(vertex => {
+	                        const frameSpaceVertex = transform.vertex(vertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	                        verts.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
+	                    });
+	                    inds.push(0, 2, 1, 0, 1, 3);
+	                    const otherLhsWingPoint = v.add(currentLhsWing, normalizedCore);
+	                    const xd1 = currentLhsWing.clone();
+	                    const xd2 = otherLhsWingPoint.clone();
+	                    const lhsWingLine = Line.withPoints(xd1, xd2);
+	                    console.log('test line', lhsWingLine.test(xd1), lhsWingLine.test(xd2));
+	                    console.log('xxxxxxxxx', currentLhsWing, otherLhsWingPoint, lhsWingLine);
+	                    previous = {
+	                        lhsWing: lhsWingLine,
+	                    };
+	                    return;
+	                }
+	                console.log('compute index', index);
+	                const angle = Math.atan2((nextCore.y - currentCore.y), nextCore.x - currentCore.x);
+	                const currentLhsWing = v.add(currentCore, v.polarToLinear(angle + (Math.PI * 0.5), width));
+	                const currentWingLine = Line.withPoints(currentLhsWing, v.add(currentLhsWing, normalizedCore));
+	                console.log('intersection', previous.lhsWing, currentWingLine);
+	                const intersection = previous.lhsWing.intersection(currentWingLine);
+	                [intersection].forEach(vertex => {
+	                    const frameSpaceVertex = transform.vertex(vertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	                    verts.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
+	                });
+	                inds.push(4, 1, 2);
 	            });
 	            console.log('vets', verts);
 	            const geometry = new three.BufferGeometry();
