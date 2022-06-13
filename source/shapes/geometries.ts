@@ -94,7 +94,7 @@ export class PathGeometry implements Geometry {
             const inds: number[] = [];
 
             coordinatesList.forEach((currentCore, index) => {
-                if (index > 1) {
+                if (index > 2) {
                     return;
                 }
 
@@ -175,9 +175,24 @@ export class PathGeometry implements Geometry {
                     nextCoreIndex, previous.indices.core, lhsWingIndex,
                     nextCoreIndex, rhsWingIndex, previous.indices.core,
                 );
+
+                const otherLhsWingPoint = v.add(currentLhsWing, normalizedCore);
+                const lhsWingLine = Line.withPoints(currentLhsWing, otherLhsWingPoint);
+
+                const otherRhsWingPoint = v.add(currentRhsWing, normalizedCore);
+                const rhsWingLine = Line.withPoints(currentRhsWing, otherRhsWingPoint);
+
+                previous = {
+                    lhsWing: lhsWingLine,
+                    rhsWing: rhsWingLine,
+                    indices: {
+                        core: nextCoreIndex,
+                        lhsWing: lhsWingIndex,
+                        rhsWing: rhsWingIndex,
+                    },
+                };
             });
             
-
             
             const geometry = new BufferGeometry();
             geometry.setAttribute( 'position', new BufferAttribute( new Float32Array(verts), 3 ) );

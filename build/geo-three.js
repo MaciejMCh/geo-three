@@ -1456,7 +1456,7 @@
 	            const verts = [];
 	            const inds = [];
 	            coordinatesList.forEach((currentCore, index) => {
-	                if (index > 1) {
+	                if (index > 2) {
 	                    return;
 	                }
 	                const nextCore = coordinatesList[index + 1];
@@ -1507,6 +1507,19 @@
 	                const nextCoreIndex = (verts.length / 3) - 1;
 	                console.log(inds, nextCoreIndex);
 	                inds.push(nextCoreIndex, previous.indices.core, lhsWingIndex, nextCoreIndex, rhsWingIndex, previous.indices.core);
+	                const otherLhsWingPoint = v.add(currentLhsWing, normalizedCore);
+	                const lhsWingLine = Line.withPoints(currentLhsWing, otherLhsWingPoint);
+	                const otherRhsWingPoint = v.add(currentRhsWing, normalizedCore);
+	                const rhsWingLine = Line.withPoints(currentRhsWing, otherRhsWingPoint);
+	                previous = {
+	                    lhsWing: lhsWingLine,
+	                    rhsWing: rhsWingLine,
+	                    indices: {
+	                        core: nextCoreIndex,
+	                        lhsWing: lhsWingIndex,
+	                        rhsWing: rhsWingIndex,
+	                    },
+	                };
 	            });
 	            const geometry = new three.BufferGeometry();
 	            geometry.setAttribute('position', new three.BufferAttribute(new Float32Array(verts), 3));
