@@ -46,27 +46,40 @@ export class PathGeometry implements Geometry {
             // ]), 3));
             // geometry.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2]), 1));
 
+            const width = 0.1;
+            const ratio = Math.abs(this.geometryTexelWorldSpace.ratio);
+            console.log('ratio', ratio);
+
+            const angle = Math.atan2(
+                (coordinatesList[1].y - coordinatesList[0].y) * ratio,
+                coordinatesList[1].x - coordinatesList[0].x,
+            );
+
+            console.log('angle', angle);
+            
+            const shifted1 = angle + (Math.PI * 0.5);
+            const xShift1 = Math.cos(shifted1) * width;
+            const yShift1 = Math.sin(shifted1) * width;
+
+            const shifted2 = angle - (Math.PI * 0.5);
+            const xShift2 = Math.cos(shifted2) * width;
+            const yShift2 = Math.sin(shifted2) * width;
+            
+
             const vertices = new Float32Array( [
-                // -1.0, -1.0,  1.0,
-                //  1.0, -1.0,  1.0,
-                //  1.0,  1.0,  1.0,
-                
                 coordinatesList[0].x, coordinatesList[0].y, 0,
                 coordinatesList[1].x, coordinatesList[1].y, 0,
-                coordinatesList[0].x + 0.1, coordinatesList[0].y, 0,
-                coordinatesList[1].x + 0.1, coordinatesList[1].y, 0,
+                coordinatesList[0].x + xShift1, coordinatesList[0].y + yShift1, 0,
+                coordinatesList[0].x + xShift2, coordinatesList[0].y + yShift2, 0,
             ] );
             var indices = new Uint16Array( [
                 0, 1, 2,
-                1, 3, 2,
+                0, 3, 1,
             ] );
             const geometry = new BufferGeometry();
             geometry.setAttribute( 'position', new BufferAttribute( vertices, 3 ) );
             geometry.setIndex( new BufferAttribute( indices, 1 ) );
             this._shapeGeometry = geometry;
-
-            // this._shapeGeometry = new ShapeBufferGeometry(new Shape(coordinatesList));
-            console.log(this._shapeGeometry);
         }
         return this._shapeGeometry;
     }

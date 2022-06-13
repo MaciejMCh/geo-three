@@ -1371,8 +1371,20 @@
 	        return this._size;
 	    }
 	}
+	class LinearSpace2d {
+	    constructor(x, y) {
+	        this.x = x;
+	        this.y = y;
+	    }
+	    get ratio() {
+	        if (this._ratio === undefined) {
+	            this._ratio = this.y.size / this.x.size;
+	        }
+	        return this._ratio;
+	    }
+	}
 	const frameNumberSpace = new LinearSpace(-1, 1);
-	const frameNumberSpace2d = { x: frameNumberSpace, y: frameNumberSpace };
+	const frameNumberSpace2d = new LinearSpace2d(frameNumberSpace, frameNumberSpace);
 	const numberSpace = {
 	    frame: frameNumberSpace,
 	    frame2d: frameNumberSpace2d,
@@ -1383,18 +1395,12 @@
 	        const maxX = Math.max(...worldSpaceTexelsXs);
 	        const minY = Math.min(...worldSpaceTexelsYs);
 	        const maxY = Math.max(...worldSpaceTexelsYs);
-	        return {
-	            x: new LinearSpace(minX, maxX),
-	            y: new LinearSpace(minY, maxY),
-	        };
+	        return new LinearSpace2d(new LinearSpace(minX, maxX), new LinearSpace(minY, maxY));
 	    },
 	    rectangleWorldTexels: (lowerLeft, upperRight) => {
 	        const lowerTexel = lowerLeft.worldTexel;
 	        const upperTexel = upperRight.worldTexel;
-	        return {
-	            x: new LinearSpace(lowerTexel.x, upperTexel.x),
-	            y: new LinearSpace(lowerTexel.y, upperTexel.y),
-	        };
+	        return new LinearSpace2d(new LinearSpace(lowerTexel.x, upperTexel.x), new LinearSpace(lowerTexel.y, upperTexel.y));
 	    },
 	};
 	const transform = {
@@ -1415,21 +1421,31 @@
 	        if (!this._shapeGeometry) {
 	            const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
 	            const coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(vertex.x, vertex.y));
+	            const width = 0.1;
+	            const ratio = Math.abs(this.geometryTexelWorldSpace.ratio);
+	            console.log('ratio', ratio);
+	            const angle = Math.atan2((coordinatesList[1].y - coordinatesList[0].y) * ratio, coordinatesList[1].x - coordinatesList[0].x);
+	            console.log('angle', angle);
+	            const shifted1 = angle + (Math.PI * 0.5);
+	            const xShift1 = Math.cos(shifted1) * width;
+	            const yShift1 = Math.sin(shifted1) * width;
+	            const shifted2 = angle - (Math.PI * 0.5);
+	            const xShift2 = Math.cos(shifted2) * width;
+	            const yShift2 = Math.sin(shifted2) * width;
 	            const vertices = new Float32Array([
 	                coordinatesList[0].x, coordinatesList[0].y, 0,
 	                coordinatesList[1].x, coordinatesList[1].y, 0,
-	                coordinatesList[0].x + 0.1, coordinatesList[0].y, 0,
-	                coordinatesList[1].x + 0.1, coordinatesList[1].y, 0,
+	                coordinatesList[0].x + xShift1, coordinatesList[0].y + yShift1, 0,
+	                coordinatesList[0].x + xShift2, coordinatesList[0].y + yShift2, 0,
 	            ]);
 	            var indices = new Uint16Array([
 	                0, 1, 2,
-	                1, 3, 2,
+	                0, 3, 1,
 	            ]);
 	            const geometry = new three.BufferGeometry();
 	            geometry.setAttribute('position', new three.BufferAttribute(vertices, 3));
 	            geometry.setIndex(new three.BufferAttribute(indices, 1));
 	            this._shapeGeometry = geometry;
-	            console.log(this._shapeGeometry);
 	        }
 	        return this._shapeGeometry;
 	    }
@@ -1480,7 +1496,7 @@
 	                const displayTriangle = (name, vertices) => {
 	                    vertices.forEach(vertex => {
 	                        const identity = this.renderEnviroment.shaderUniforms.create.circle();
-	                        this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
+	                        this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 100);
 	                        this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 	                    });
 	                    const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);

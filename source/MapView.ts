@@ -172,7 +172,7 @@ export class MapView extends Mesh
 				const displayTriangle = (name: string, vertices: Geoposition[]) => {
 					vertices.forEach(vertex => {
 						const identity = this.renderEnviroment.shaderUniforms.create.circle();
-						this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 200);
+						this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 100);
 						this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 					});
 

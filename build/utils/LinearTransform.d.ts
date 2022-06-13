@@ -7,10 +7,13 @@ export declare class LinearSpace {
     constructor(lowerBound: number, upperBound: number);
     convert: (value: number, to: LinearSpace) => number;
 }
-export declare type LinearSpace2d = {
-    x: LinearSpace;
-    y: LinearSpace;
-};
+export declare class LinearSpace2d {
+    readonly x: LinearSpace;
+    readonly y: LinearSpace;
+    private _ratio?;
+    get ratio(): number;
+    constructor(x: LinearSpace, y: LinearSpace);
+}
 export declare const numberSpace: {
     frame: LinearSpace;
     frame2d: LinearSpace2d;

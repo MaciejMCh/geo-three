@@ -19,14 +19,23 @@ export class LinearSpace {
     };
 }
 
-export type LinearSpace2d = {
-    x: LinearSpace;
-    y: LinearSpace;
+export class LinearSpace2d {
+    private _ratio?: number;
+
+    get ratio() {
+        if (this._ratio === undefined) {
+            this._ratio = this.y.size / this.x.size;
+        }
+
+        return this._ratio;
+    }
+
+    constructor(public readonly x: LinearSpace, public readonly y: LinearSpace) {}
 };
 
 const frameNumberSpace: LinearSpace = new LinearSpace(-1, 1);
 
-const frameNumberSpace2d: LinearSpace2d = { x: frameNumberSpace, y: frameNumberSpace };
+const frameNumberSpace2d: LinearSpace2d = new LinearSpace2d(frameNumberSpace, frameNumberSpace);
 
 export const numberSpace = {
     frame: frameNumberSpace,
@@ -39,19 +48,19 @@ export const numberSpace = {
         const minY = Math.min(...worldSpaceTexelsYs);
         const maxY = Math.max(...worldSpaceTexelsYs);
         
-        return {
-            x: new LinearSpace(minX, maxX),
-            y: new LinearSpace(minY, maxY),
-        };
+        return new LinearSpace2d(
+            new LinearSpace(minX, maxX),
+            new LinearSpace(minY, maxY),
+        );
     },
     rectangleWorldTexels: (lowerLeft: Geoposition, upperRight: Geoposition): LinearSpace2d => {
         const lowerTexel = lowerLeft.worldTexel;
         const upperTexel = upperRight.worldTexel;
         
-        return {
-            x: new LinearSpace(lowerTexel.x, upperTexel.x),
-            y: new LinearSpace(lowerTexel.y, upperTexel.y),
-        };
+        return new LinearSpace2d(
+            new LinearSpace(lowerTexel.x, upperTexel.x),
+            new LinearSpace(lowerTexel.y, upperTexel.y),
+        );
     },
 };
 
