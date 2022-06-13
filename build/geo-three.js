@@ -1450,13 +1450,23 @@
 	        if (!this._shapeGeometry) {
 	            transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
 	            const coordinatesList = this.vertices.map(vertex => vertex.worldTexel);
-	            console.log(coordinatesList);
 	            const width = 100;
 	            var previous;
 	            const verts = [];
 	            const inds = [];
 	            coordinatesList.forEach((currentCore, index) => {
-	                if (index > 2) {
+	                if (index === coordinatesList.length - 1) {
+	                    const previousCore = coordinatesList[index - 1];
+	                    const angle = Math.atan2(currentCore.y - previousCore.y, currentCore.x - previousCore.x);
+	                    const currentLhsWing = v.add(currentCore, v.polarToLinear(angle + (Math.PI * 0.5), width));
+	                    const currentRhsWing = v.add(currentCore, v.polarToLinear(angle - (Math.PI * 0.5), width));
+	                    [currentLhsWing, currentRhsWing].forEach(vertex => {
+	                        const frameSpaceVertex = transform.vertex(vertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	                        verts.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
+	                    });
+	                    const lhsWingIndex = (verts.length / 3) - 2;
+	                    const rhsWingIndex = lhsWingIndex + 1;
+	                    inds.push(lhsWingIndex, previous.indices.core, previous.indices.lhsWing, rhsWingIndex, previous.indices.rhsWing, previous.indices.core);
 	                    return;
 	                }
 	                const nextCore = coordinatesList[index + 1];
@@ -1498,14 +1508,12 @@
 	                });
 	                const lhsWingIndex = (verts.length / 3) - 2;
 	                const rhsWingIndex = lhsWingIndex + 1;
-	                console.log(lhsWingIndex, rhsWingIndex);
 	                inds.push(lhsWingIndex, previous.indices.core, previous.indices.lhsWing, rhsWingIndex, previous.indices.rhsWing, previous.indices.core);
 	                [nextCore].forEach(vertex => {
 	                    const frameSpaceVertex = transform.vertex(vertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
 	                    verts.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
 	                });
 	                const nextCoreIndex = (verts.length / 3) - 1;
-	                console.log(inds, nextCoreIndex);
 	                inds.push(nextCoreIndex, previous.indices.core, lhsWingIndex, nextCoreIndex, rhsWingIndex, previous.indices.core);
 	                const otherLhsWingPoint = v.add(currentLhsWing, normalizedCore);
 	                const lhsWingLine = Line.withPoints(currentLhsWing, otherLhsWingPoint);

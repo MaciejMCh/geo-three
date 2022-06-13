@@ -74,11 +74,9 @@ export class PathGeometry implements Geometry {
             //const coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
 
             const coordinatesList = this.vertices.map(vertex => vertex.worldTexel);
-            console.log(coordinatesList);
 
             const width = 100;
             // const ratio = Math.abs(this.geometryTexelWorldSpace.ratio);
-            // console.log('ratio', ratio);
 
             var previous: {
                 lhsWing: Line;
@@ -94,7 +92,28 @@ export class PathGeometry implements Geometry {
             const inds: number[] = [];
 
             coordinatesList.forEach((currentCore, index) => {
-                if (index > 2) {
+                if (index === coordinatesList.length - 1) {
+                    const previousCore = coordinatesList[index - 1];
+                    const angle = Math.atan2(
+                        currentCore.y - previousCore.y,
+                        currentCore.x - previousCore.x,
+                    );
+                    const currentLhsWing = v.add(currentCore, v.polarToLinear(angle + (Math.PI * 0.5), width));
+                    const currentRhsWing = v.add(currentCore, v.polarToLinear(angle - (Math.PI * 0.5), width));
+
+                    [currentLhsWing, currentRhsWing].forEach(vertex => {
+                        const frameSpaceVertex = transform.vertex(vertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
+                        verts.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
+                    });
+
+                    const lhsWingIndex = (verts.length / 3) - 2;
+                    const rhsWingIndex = lhsWingIndex + 1;
+
+                    inds.push(
+                        lhsWingIndex, previous.indices.core, previous.indices.lhsWing,
+                        rhsWingIndex, previous.indices.rhsWing, previous.indices.core,
+                    );
+
                     return;
                 }
 
@@ -156,7 +175,6 @@ export class PathGeometry implements Geometry {
 
                 const lhsWingIndex = (verts.length / 3) - 2;
                 const rhsWingIndex = lhsWingIndex + 1;
-                console.log(lhsWingIndex, rhsWingIndex);
 
                 // verts.push(-1, 1, 0);
                 inds.push(
@@ -170,7 +188,6 @@ export class PathGeometry implements Geometry {
                 });
 
                 const nextCoreIndex = (verts.length / 3) - 1;
-                console.log(inds, nextCoreIndex);
                 inds.push(
                     nextCoreIndex, previous.indices.core, lhsWingIndex,
                     nextCoreIndex, rhsWingIndex, previous.indices.core,
