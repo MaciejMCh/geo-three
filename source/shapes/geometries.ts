@@ -70,15 +70,6 @@ export class PathGeometry implements Geometry {
 
     get shapeGeometry() {
         if (!this._shapeGeometry) {
-            const l = Line.withPoints(new Vector2(0, 1), new Vector2(10, -231));
-            console.log('xdd', l.test(new Vector2(10, -231)));
-
-            const l1 = Line.withPoints(new Vector2(0, 1), new Vector2(1, 1));
-            const l2 = Line.withPoints(new Vector2(0, 10), new Vector2(1, 9));
-            console.log('int', l1.intersection(l2));
-            
-
-
             const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
             //const coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
 
@@ -91,6 +82,12 @@ export class PathGeometry implements Geometry {
 
             var previous: {
                 lhsWing: Line;
+                rhsWing: Line;
+                indices: {
+                    core: number;
+                    lhsWing: number;
+                    rhsWing: number;
+                },
             } | undefined;
 
             const verts: number[] = [];
@@ -122,41 +119,65 @@ export class PathGeometry implements Geometry {
                     );
 
                     const otherLhsWingPoint = v.add(currentLhsWing, normalizedCore);
-                    const xd1 = currentLhsWing.clone();
-                    const xd2 = otherLhsWingPoint.clone();
-                    const lhsWingLine = Line.withPoints(xd1, xd2);
-                    console.log('test line', lhsWingLine.test(xd1), lhsWingLine.test(xd2));
-                    console.log('xxxxxxxxx', currentLhsWing, otherLhsWingPoint, lhsWingLine);
+                    const lhsWingLine = Line.withPoints(currentLhsWing, otherLhsWingPoint);
+
+                    const otherRhsWingPoint = v.add(currentRhsWing, normalizedCore);
+                    const rhsWingLine = Line.withPoints(currentRhsWing, otherRhsWingPoint);
 
                     previous = {
                         lhsWing: lhsWingLine,
+                        rhsWing: rhsWingLine,
+                        indices: {
+                            core: 1,
+                            lhsWing: 2,
+                            rhsWing: 3,
+                        },
                     };
                     return;
                 }
-
-                console.log('compute index', index);
 
                 const angle = Math.atan2(
                     (nextCore.y - currentCore.y),
                     nextCore.x - currentCore.x,
                 );
                 const currentLhsWing = v.add(currentCore, v.polarToLinear(angle + (Math.PI * 0.5), width));
-                const currentWingLine = Line.withPoints(currentLhsWing, v.add(currentLhsWing, normalizedCore));
-                console.log('intersection', previous.lhsWing, currentWingLine);
-                const intersection = previous.lhsWing.intersection(currentWingLine);
+                const currentLhsWingLine = Line.withPoints(currentLhsWing, v.add(currentLhsWing, normalizedCore));
+                const lhsLinesIntersection = previous.lhsWing.intersection(currentLhsWingLine);
 
-                [intersection].forEach(vertex => {
+                const currentRhsWing = v.add(currentCore, v.polarToLinear(angle - (Math.PI * 0.5), width));
+                const currentRhsWingLine = Line.withPoints(currentRhsWing, v.add(currentRhsWing, normalizedCore));
+                const rhsLinesIntersection = previous.rhsWing.intersection(currentRhsWingLine);
+
+
+                [lhsLinesIntersection, rhsLinesIntersection].forEach(vertex => {
                     const frameSpaceVertex = transform.vertex(vertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
                     verts.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
                 });
 
+                const lhsWingIndex = (verts.length / 3) - 2;
+                const rhsWingIndex = lhsWingIndex + 1;
+                console.log(lhsWingIndex, rhsWingIndex);
+
                 // verts.push(-1, 1, 0);
                 inds.push(
-                    4, 1, 2,
+                    lhsWingIndex, previous.indices.core, previous.indices.lhsWing,
+                    rhsWingIndex, previous.indices.rhsWing, previous.indices.core,
+                );
+
+                [nextCore].forEach(vertex => {
+                    const frameSpaceVertex = transform.vertex(vertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
+                    verts.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
+                });
+
+                const nextCoreIndex = (verts.length / 3) - 1;
+                console.log(inds, nextCoreIndex);
+                inds.push(
+                    nextCoreIndex, previous.indices.core, lhsWingIndex,
+                    nextCoreIndex, rhsWingIndex, previous.indices.core,
                 );
             });
+            
 
-            console.log('vets', verts);
             
             const geometry = new BufferGeometry();
             geometry.setAttribute( 'position', new BufferAttribute( new Float32Array(verts), 3 ) );
