@@ -1409,8 +1409,13 @@
 	        x: from.x.convert(vertex.worldTexel.x, to.x),
 	        y: from.y.convert(vertex.worldTexel.y, to.y),
 	    })),
+	    vertex: (vertex, from, to) => new three.Vector2(from.x.convert(vertex.x, to.x), from.y.convert(vertex.y, to.y))
 	};
 
+	const v = {
+	    add: (lhs, rhs) => new three.Vector2(lhs.x + rhs.x, lhs.y + rhs.y),
+	    polarToLinear: (angle, length) => new three.Vector2(Math.cos(angle) * length, Math.sin(angle) * length),
+	};
 	class PathGeometry$1 {
 	    constructor(vertices, geometryTexelWorldSpace, worldToFrameTransform) {
 	        this.vertices = vertices;
@@ -1419,29 +1424,29 @@
 	    }
 	    get shapeGeometry() {
 	        if (!this._shapeGeometry) {
-	            const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
-	            const coordinatesList = frameSpaceVertices.map(vertex => new three.Vector2(vertex.x, vertex.y));
-	            const width = 0.1;
-	            const ratio = Math.abs(this.geometryTexelWorldSpace.ratio);
-	            console.log('ratio', ratio);
+	            transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	            const coordinatesList = this.vertices.map(vertex => vertex.worldTexel);
+	            console.log(coordinatesList);
+	            const width = 100;
 	            var previousVetex;
 	            const verts = [];
 	            const inds = [];
 	            coordinatesList.forEach((vertex, index) => {
 	                const nextVertex = coordinatesList[index + 1];
 	                if (!previousVetex) {
-	                    const angle = Math.atan2((nextVertex.y - vertex.y) * ratio, nextVertex.x - vertex.x);
-	                    const shifted1 = angle + (Math.PI * 0.5);
-	                    const xShift1 = Math.cos(shifted1) * width;
-	                    const yShift1 = Math.sin(shifted1) * width;
-	                    const shifted2 = angle - (Math.PI * 0.5);
-	                    const xShift2 = Math.cos(shifted2) * width;
-	                    const yShift2 = Math.sin(shifted2) * width;
-	                    verts.push(vertex.x, vertex.y, 0, nextVertex.x, nextVertex.y, 0, vertex.x + xShift1, vertex.y + yShift1, 0, vertex.x + xShift2, vertex.y + yShift2, 0);
-	                    inds.push(0, 1, 2, 0, 3, 1);
+	                    const angle = Math.atan2((nextVertex.y - vertex.y), nextVertex.x - vertex.x);
+	                    const currentLhsWing = v.add(vertex, v.polarToLinear(angle + (Math.PI * 0.5), width));
+	                    const currentRhsWing = v.add(vertex, v.polarToLinear(angle - (Math.PI * 0.5), width));
+	                    const frameSpaceVertex = transform.vertex(vertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	                    const frameSpaceNewVertex = transform.vertex(nextVertex, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	                    const frameSpaceCurrentLhsWing = transform.vertex(currentLhsWing, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	                    const frameSpaceCurrentRhsWing = transform.vertex(currentRhsWing, this.geometryTexelWorldSpace, numberSpace.frame2d);
+	                    verts.push(frameSpaceVertex.x, frameSpaceVertex.y, 0, frameSpaceNewVertex.x, frameSpaceNewVertex.y, 0, frameSpaceCurrentLhsWing.x, frameSpaceCurrentLhsWing.y, 0, frameSpaceCurrentRhsWing.x, frameSpaceCurrentRhsWing.y, 0);
+	                    inds.push(0, 2, 1, 0, 1, 3);
 	                    previousVetex = vertex;
 	                }
 	            });
+	            console.log('vets', verts);
 	            const geometry = new three.BufferGeometry();
 	            geometry.setAttribute('position', new three.BufferAttribute(new Float32Array(verts), 3));
 	            geometry.setIndex(new three.BufferAttribute(new Uint16Array(inds), 1));

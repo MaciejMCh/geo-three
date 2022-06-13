@@ -1,3 +1,4 @@
+import { Vector2 } from 'three';
 import { Geoposition } from '../nodes/primitive';
 
 export class LinearSpace {
@@ -70,4 +71,8 @@ export const transform = {
             x: from.x.convert(vertex.worldTexel.x, to.x),
             y: from.y.convert(vertex.worldTexel.y, to.y),
         })),
+    vertex: (vertex: Vector2, from: LinearSpace2d, to: LinearSpace2d) => new Vector2(
+        from.x.convert(vertex.x, to.x),
+        from.y.convert(vertex.y, to.y),
+    )
 };

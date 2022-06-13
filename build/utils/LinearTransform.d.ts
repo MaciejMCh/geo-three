@@ -1,3 +1,4 @@
+import { Vector2 } from 'three';
 import { Geoposition } from '../nodes/primitive';
 export declare class LinearSpace {
     readonly lowerBound: number;
@@ -25,4 +26,5 @@ export declare const transform: {
         x: number;
         y: number;
     }[];
+    vertex: (vertex: Vector2, from: LinearSpace2d, to: LinearSpace2d) => Vector2;
 };
