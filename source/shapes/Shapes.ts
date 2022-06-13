@@ -1,6 +1,13 @@
 import { Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, Scene, ShapeBufferGeometry, Texture, Vector2, WebGLRenderer, WebGLRenderTarget, Shape as ThreeShape, Uniform, BufferGeometry, LineSegments, EdgesGeometry, LineBasicMaterial } from 'three';
 import { Geometry } from './geometries';
 
+const frameBufferSize = () => {
+    return {
+        width: window.innerWidth * window.devicePixelRatio,
+        height: window.innerHeight * window.devicePixelRatio,
+    };
+}
+
 type ShapeRenderSetup = {
     bufferRenderTarget: WebGLRenderTarget;
     shapeScene: Scene;
@@ -70,10 +77,11 @@ type ShapesRenderSetup = {
 };
 
 const setupShapesRender = (): ShapesRenderSetup => {
-    const camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.00001, 1000000 );
+    const camera = new Camera();
     const bufferScene = new Scene();
     bufferScene.name = 'shapes_scene';
-    const bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
+    const { width, height } = frameBufferSize();
+    const bufferTexture = new WebGLRenderTarget( width, height, { minFilter: LinearFilter, magFilter: NearestFilter});
     bufferTexture.texture.name = 'shapes_buffer-texture';
     return { bufferRenderTarget: bufferTexture, camera, shapesStackScene: bufferScene };
 };
@@ -119,7 +127,8 @@ const setupShapeRender = (debugIdentity: string): ShapeRenderSetup => {
     const camera = new Camera();
     const bufferScene = new Scene();
     bufferScene.name = `shape-${debugIdentity}_scene`;
-    const bufferTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter});
+    const { width, height } = frameBufferSize();
+    const bufferTexture = new WebGLRenderTarget( width, height, { minFilter: LinearFilter, magFilter: NearestFilter});
     bufferTexture.texture.name = `shape-${debugIdentity}_buffer-texture`;
     return { bufferRenderTarget: bufferTexture, camera, shapeScene: bufferScene };
 };

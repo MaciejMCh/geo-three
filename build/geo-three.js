@@ -2049,6 +2049,12 @@
 	    }
 	}
 
+	const frameBufferSize = () => {
+	    return {
+	        width: window.innerWidth * window.devicePixelRatio,
+	        height: window.innerHeight * window.devicePixelRatio,
+	    };
+	};
 	class SimpleGeometry {
 	    constructor(mesh, invalidate) {
 	        this.mesh = mesh;
@@ -2105,10 +2111,11 @@
 	    }
 	}
 	const setupShapesRender = () => {
-	    const camera = new three.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.00001, 1000000);
+	    const camera = new three.Camera();
 	    const bufferScene = new three.Scene();
 	    bufferScene.name = 'shapes_scene';
-	    const bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
+	    const { width, height } = frameBufferSize();
+	    const bufferTexture = new three.WebGLRenderTarget(width, height, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
 	    bufferTexture.texture.name = 'shapes_buffer-texture';
 	    return { bufferRenderTarget: bufferTexture, camera, shapesStackScene: bufferScene };
 	};
@@ -2147,7 +2154,8 @@
 	    const camera = new three.Camera();
 	    const bufferScene = new three.Scene();
 	    bufferScene.name = `shape-${debugIdentity}_scene`;
-	    const bufferTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
+	    const { width, height } = frameBufferSize();
+	    const bufferTexture = new three.WebGLRenderTarget(width, height, { minFilter: three.LinearFilter, magFilter: three.NearestFilter });
 	    bufferTexture.texture.name = `shape-${debugIdentity}_buffer-texture`;
 	    return { bufferRenderTarget: bufferTexture, camera, shapeScene: bufferScene };
 	};
