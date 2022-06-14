@@ -24,6 +24,7 @@ export declare class Shape {
     constructor(debugIdentity: string, setup: ShapeRenderSetup);
     render: (webglRenderer: WebGLRenderer) => void;
     useSimpleGeometry: () => SimpleGeometry;
+    useLineGeometry: () => SimpleGeometry;
     usePathGeometry: () => PathGeometry;
     invalidate: () => void;
 }

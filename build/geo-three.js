@@ -1447,29 +1447,36 @@
 	    const rhs = v.add(leadingCore, v.polarToLinear(angle - (Math.PI * 0.5), width));
 	    return { lhs, rhs };
 	};
+	const sideFactor = (pathSide) => ({
+	    'left': 0,
+	    'core': 0.5,
+	    'right': 1.0,
+	})[pathSide];
 	const makePathGeometry = (geopositions, geometryTexelWorldSpace) => {
 	    const coordinatesList = geopositions.map(vertex => vertex.worldTexel);
 	    const width = WIDTH;
 	    let previous;
 	    const vertices = [];
 	    const indices = [];
-	    const appendVertex = (vertex) => {
+	    const stats = [];
+	    const appendVertex = (vertex, pathSide) => {
 	        const frameSpaceVertex = transform.vertex(vertex, geometryTexelWorldSpace, numberSpace.frame2d);
 	        vertices.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
+	        stats.push(sideFactor(pathSide), sideFactor(pathSide));
 	        return (vertices.length / 3) - 1;
 	    };
 	    const finishShape = (previousCore, currentCore) => {
 	        const currentWings = makeWings(currentCore, previousCore, width);
-	        const lhsWingIndex = appendVertex(currentWings.lhs);
-	        const rhsWingIndex = appendVertex(currentWings.rhs);
+	        const lhsWingIndex = appendVertex(currentWings.lhs, 'left');
+	        const rhsWingIndex = appendVertex(currentWings.rhs, 'right');
 	        indices.push(lhsWingIndex, previous.indices.core, previous.indices.lhsWing, rhsWingIndex, previous.indices.rhsWing, previous.indices.core);
 	    };
 	    const startShape = (currentCore, nextCore, normalizedCore) => {
 	        const wings = makeWings(currentCore, nextCore, width, true);
-	        const currentCoreIndex = appendVertex(currentCore);
-	        const nextCoreIndex = appendVertex(nextCore);
-	        const lhsWingIndex = appendVertex(wings.lhs);
-	        const rhsWingIndex = appendVertex(wings.rhs);
+	        const currentCoreIndex = appendVertex(currentCore, 'core');
+	        const nextCoreIndex = appendVertex(nextCore, 'core');
+	        const lhsWingIndex = appendVertex(wings.lhs, 'left');
+	        const rhsWingIndex = appendVertex(wings.rhs, 'right');
 	        indices.push(currentCoreIndex, lhsWingIndex, nextCoreIndex, currentCoreIndex, nextCoreIndex, rhsWingIndex);
 	        const otherLhsWingPoint = v.add(wings.lhs, normalizedCore);
 	        const lhsWingLine = Line.withPoints(wings.lhs, otherLhsWingPoint);
@@ -1501,10 +1508,10 @@
 	        const lhsLinesIntersection = previous.lhsWing.intersection(currentLhsWingLine);
 	        const currentRhsWingLine = Line.withPoints(currentWing.rhs, v.add(currentWing.rhs, normalizedCore));
 	        const rhsLinesIntersection = previous.rhsWing.intersection(currentRhsWingLine);
-	        const lhsWingIndex = appendVertex(lhsLinesIntersection);
-	        const rhsWingIndex = appendVertex(rhsLinesIntersection);
+	        const lhsWingIndex = appendVertex(lhsLinesIntersection, 'left');
+	        const rhsWingIndex = appendVertex(rhsLinesIntersection, 'right');
 	        indices.push(lhsWingIndex, previous.indices.core, previous.indices.lhsWing, rhsWingIndex, previous.indices.rhsWing, previous.indices.core);
-	        const nextCoreIndex = appendVertex(nextCore);
+	        const nextCoreIndex = appendVertex(nextCore, 'core');
 	        indices.push(nextCoreIndex, previous.indices.core, lhsWingIndex, nextCoreIndex, rhsWingIndex, previous.indices.core);
 	        const otherLhsWingPoint = v.add(currentWing.lhs, normalizedCore);
 	        const lhsWingLine = Line.withPoints(currentWing.lhs, otherLhsWingPoint);
@@ -1522,6 +1529,7 @@
 	    });
 	    const geometry = new three.BufferGeometry();
 	    geometry.setAttribute('position', new three.BufferAttribute(new Float32Array(vertices), 3));
+	    geometry.setAttribute('stats', new three.BufferAttribute(new Float32Array(stats), 2));
 	    geometry.setIndex(new three.BufferAttribute(new Uint16Array(indices), 1));
 	    return geometry;
 	};
@@ -1589,7 +1597,7 @@
 	                        this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 	                    });
 	                    const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
-	                    const geometryHandle = polygonShape.useSimpleGeometry();
+	                    const geometryHandle = polygonShape.useLineGeometry();
 	                    geometryHandle.updateGeometry(new PathGeometry$1(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
 	                };
 	                displayTriangle('second', [
@@ -2206,6 +2214,38 @@
 	            const material = new three.MeshBasicMaterial({ color: 0xffffff });
 	            const mesh = new three.Mesh(new three.ShapeBufferGeometry(), material);
 	            mesh.name = `${this.debugIdentity}_simple-geometry-mesh`;
+	            this.setup.shapeScene.add(mesh);
+	            this.invalidate();
+	            return new SimpleGeometry(mesh, this.invalidate);
+	        };
+	        this.useLineGeometry = () => {
+	            const material = new three.MeshBasicMaterial({ color: 0xffff00 });
+	            material.onBeforeCompile = shader => {
+	                const varryingDeclarations = [
+	                    'varying float vSide;',
+	                    'varying float vLength;',
+	                ];
+	                shader.vertexShader = editLines(shader.vertexShader, lines => {
+	                    lines.splice(0, 0, [
+	                        ...varryingDeclarations,
+	                        'attribute vec2 stats;'
+	                    ].join('\n'));
+	                    lines.splice(lines.length - 1, 0, `
+                    vSide = stats[0];
+                    vLength = stats[1];
+                `);
+	                });
+	                shader.fragmentShader = editLines(shader.fragmentShader, lines => {
+	                    lines.splice(0, 0, [
+	                        ...varryingDeclarations,
+	                    ].join('\n'));
+	                    lines.splice(lines.length - 1, 0, `
+                    gl_FragColor = vec4(vSide, vSide, vSide, 10);
+                `);
+	                });
+	            };
+	            const mesh = new three.Mesh(new three.ShapeBufferGeometry(), material);
+	            mesh.name = `${this.debugIdentity}_line-geometry-mesh`;
 	            this.setup.shapeScene.add(mesh);
 	            this.invalidate();
 	            return new SimpleGeometry(mesh, this.invalidate);

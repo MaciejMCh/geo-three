@@ -1,4 +1,5 @@
 import { Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, Scene, ShapeBufferGeometry, Texture, Vector2, WebGLRenderer, WebGLRenderTarget, Shape as ThreeShape, Uniform, BufferGeometry, LineSegments, EdgesGeometry, LineBasicMaterial } from 'three';
+import { editLines } from '../utils/shderEditor';
 import { Geometry } from './geometries';
 
 const frameBufferSize = () => {
@@ -51,6 +52,43 @@ export class Shape {
         const material = new MeshBasicMaterial({ color: 0xffffff });
         const mesh = new Mesh(new ShapeBufferGeometry(), material);
         mesh.name = `${this.debugIdentity}_simple-geometry-mesh`;
+        this.setup.shapeScene.add(mesh);
+        this.invalidate();
+        return new SimpleGeometry(mesh, this.invalidate);
+    };
+
+    useLineGeometry = (): SimpleGeometry => {
+        const material = new MeshBasicMaterial({ color: 0xffff00 });
+
+        material.onBeforeCompile = shader => {
+            const varryingDeclarations = [
+                'varying float vSide;',
+                'varying float vLength;',
+            ];
+            shader.vertexShader = editLines(shader.vertexShader, lines => {
+                lines.splice(0, 0, [
+                    ...varryingDeclarations,
+                    'attribute vec2 stats;'
+                ].join('\n'));
+                lines.splice(lines.length - 1, 0, `
+                    vSide = stats[0];
+                    vLength = stats[1];
+                `);
+            });
+
+            shader.fragmentShader = editLines(shader.fragmentShader, lines => {
+                lines.splice(0, 0, [
+                    ...varryingDeclarations,
+                ].join('\n'));
+
+                lines.splice(lines.length - 1, 0, `
+                    gl_FragColor = vec4(vSide, vSide, vSide, 10);
+                `);
+            });
+        };
+
+        const mesh = new Mesh(new ShapeBufferGeometry(), material);
+        mesh.name = `${this.debugIdentity}_line-geometry-mesh`;
         this.setup.shapeScene.add(mesh);
         this.invalidate();
         return new SimpleGeometry(mesh, this.invalidate);

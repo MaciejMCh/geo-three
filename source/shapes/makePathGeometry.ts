@@ -2,6 +2,8 @@ import { BufferAttribute, BufferGeometry, Vector2 } from 'three';
 import { Geoposition } from '../nodes/primitive';
 import { LinearSpace2d, numberSpace, transform } from '../utils/LinearTransform';
 
+type PathSide = 'left' | 'core' | 'right';
+
 const WIDTH = 200;
 
 class Line {
@@ -49,6 +51,12 @@ const makeWings = (leadingCore: Vector2, trailingCore: Vector2, width: number, r
     return { lhs, rhs };
 }
 
+const sideFactor = (pathSide: PathSide) => ({
+    'left': 0,
+    'core': 0.5,
+    'right': 1.0,
+})[pathSide]
+
 export const makePathGeometry = (geopositions: Geoposition[], geometryTexelWorldSpace: LinearSpace2d) => {
     const coordinatesList = geopositions.map(vertex => vertex.worldTexel);
     const width = WIDTH;
@@ -66,18 +74,20 @@ export const makePathGeometry = (geopositions: Geoposition[], geometryTexelWorld
     var verticesCount = 0;
     const vertices: number[] = [];
     const indices: number[] = [];
+    const stats: number[] = [];
 
-    const appendVertex = (vertex: Vector2) => {
+    const appendVertex = (vertex: Vector2, pathSide: PathSide) => {
         const frameSpaceVertex = transform.vertex(vertex, geometryTexelWorldSpace, numberSpace.frame2d);
         vertices.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
+        stats.push(sideFactor(pathSide), sideFactor(pathSide));
         verticesCount += 1;
         return (vertices.length / 3) - 1;
     };
 
     const finishShape = (previousCore: Vector2, currentCore: Vector2) => {
         const currentWings = makeWings(currentCore, previousCore, width);
-        const lhsWingIndex = appendVertex(currentWings.lhs);
-        const rhsWingIndex = appendVertex(currentWings.rhs);
+        const lhsWingIndex = appendVertex(currentWings.lhs, 'left');
+        const rhsWingIndex = appendVertex(currentWings.rhs, 'right');
 
         indices.push(
             lhsWingIndex, previous.indices.core, previous.indices.lhsWing,
@@ -87,10 +97,10 @@ export const makePathGeometry = (geopositions: Geoposition[], geometryTexelWorld
 
     const startShape = (currentCore: Vector2, nextCore: Vector2, normalizedCore: Vector2) => {
         const wings = makeWings(currentCore, nextCore, width, true);
-        const currentCoreIndex = appendVertex(currentCore);
-        const nextCoreIndex = appendVertex(nextCore);
-        const lhsWingIndex = appendVertex(wings.lhs);
-        const rhsWingIndex = appendVertex(wings.rhs);
+        const currentCoreIndex = appendVertex(currentCore, 'core');
+        const nextCoreIndex = appendVertex(nextCore, 'core');
+        const lhsWingIndex = appendVertex(wings.lhs, 'left');
+        const rhsWingIndex = appendVertex(wings.rhs, 'right');
 
         indices.push(
             currentCoreIndex, lhsWingIndex, nextCoreIndex,
@@ -133,15 +143,15 @@ export const makePathGeometry = (geopositions: Geoposition[], geometryTexelWorld
         const currentRhsWingLine = Line.withPoints(currentWing.rhs, v.add(currentWing.rhs, normalizedCore));
         const rhsLinesIntersection = previous.rhsWing.intersection(currentRhsWingLine);
 
-        const lhsWingIndex = appendVertex(lhsLinesIntersection);
-        const rhsWingIndex = appendVertex(rhsLinesIntersection);
+        const lhsWingIndex = appendVertex(lhsLinesIntersection, 'left');
+        const rhsWingIndex = appendVertex(rhsLinesIntersection, 'right');
 
         indices.push(
             lhsWingIndex, previous.indices.core, previous.indices.lhsWing,
             rhsWingIndex, previous.indices.rhsWing, previous.indices.core,
         );
 
-        const nextCoreIndex = appendVertex(nextCore);
+        const nextCoreIndex = appendVertex(nextCore, 'core');
         indices.push(
             nextCoreIndex, previous.indices.core, lhsWingIndex,
             nextCoreIndex, rhsWingIndex, previous.indices.core,
@@ -165,7 +175,8 @@ export const makePathGeometry = (geopositions: Geoposition[], geometryTexelWorld
     });
     
     const geometry = new BufferGeometry();
-    geometry.setAttribute( 'position', new BufferAttribute( new Float32Array(vertices), 3 ) );
+    geometry.setAttribute( 'position', new BufferAttribute(new Float32Array(vertices), 3));
+    geometry.setAttribute( 'stats', new BufferAttribute(new Float32Array(stats), 2));
     geometry.setIndex( new BufferAttribute( new Uint16Array(indices), 1 ) );
     return geometry;
 };
