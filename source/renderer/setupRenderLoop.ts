@@ -5,6 +5,7 @@ export const setupRenderLoop = (renderEnviroment: RenderEnviroment, controls, sc
         const { webGlRenderer, deferredRenderer } = renderEnviroment;
         requestAnimationFrame(animate);
         controls.update();
+        renderEnviroment.modelUpdateLoop.tick();
         
         const rootRenderTarget = webGlRenderer.getRenderTarget();
         deferredRenderer.render(webGlRenderer);

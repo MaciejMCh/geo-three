@@ -1,16 +1,18 @@
-import { Texture, WebGLRenderer } from 'three';
-import { Geoposition } from './nodes/primitive';
+import { PerspectiveCamera, WebGLRenderer } from 'three';
 import { DeferredRenderer } from './renderer/DeferredRenderer';
-import { PolygonGeometry } from './shapes/geometries';
 import { ShaderUniforms } from './uniforms';
+import { ModelUpdateLoop } from './uniforms/ModelUpdateLoop';
 import { LinearTransform2d } from './utils/LinearFunction';
 import { LinearSpace2d } from './utils/LinearTransform';
 
 export class RenderEnviroment {
+    public readonly modelUpdateLoop = new ModelUpdateLoop({ worldCamera: this.worldCamera });
+
     constructor(
         public readonly webGlRenderer: WebGLRenderer,
         public readonly deferredRenderer: DeferredRenderer,
         public readonly shaderUniforms: ShaderUniforms,
+        public readonly worldCamera: PerspectiveCamera,
     ) {
         webGlRenderer.setClearColor(0x000000, 0);
     }

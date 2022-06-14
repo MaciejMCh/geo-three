@@ -1,4 +1,5 @@
 import { Camera, Mesh, Scene, Texture, WebGLRenderer, WebGLRenderTarget, LineSegments } from 'three';
+import { ModelUpdateLoop } from '../uniforms/ModelUpdateLoop';
 import { Geometry } from './geometries';
 declare type ShapeRenderSetup = {
     bufferRenderTarget: WebGLRenderTarget;
@@ -21,10 +22,11 @@ export declare class Shape {
     private debugIdentity;
     private setup;
     private needsRender;
+    continousRerender: boolean;
     constructor(debugIdentity: string, setup: ShapeRenderSetup);
     render: (webglRenderer: WebGLRenderer) => void;
     useSimpleGeometry: () => SimpleGeometry;
-    useLineGeometry: () => SimpleGeometry;
+    useLineGeometry: (updateLoop: ModelUpdateLoop) => SimpleGeometry;
     usePathGeometry: () => PathGeometry;
     invalidate: () => void;
 }

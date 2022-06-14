@@ -1,4 +1,5 @@
 import { Camera, Color, LinearFilter, Mesh, MeshBasicMaterial, NearestFilter, PerspectiveCamera, Scene, ShapeBufferGeometry, Texture, Vector2, WebGLRenderer, WebGLRenderTarget, Shape as ThreeShape, Uniform, BufferGeometry, LineSegments, EdgesGeometry, LineBasicMaterial } from 'three';
+import { ModelUpdateLoop } from '../uniforms/ModelUpdateLoop';
 import { editLines } from '../utils/shderEditor';
 import { Geometry } from './geometries';
 
@@ -36,13 +37,15 @@ class PathGeometry {
 export class Shape {
     private needsRender = true;
 
+    public continousRerender = false;
+
     constructor(private debugIdentity: string, private setup: ShapeRenderSetup) {}
 
     render = (webglRenderer: WebGLRenderer) => {
-        if (!this.needsRender) {
+        if (!this.needsRender && !this.continousRerender) {
             return;
         }
-        console.log('render shape', this.debugIdentity, this.setup.shapeScene.children);
+        //console.log('render shape', this.debugIdentity, this.setup.shapeScene.children);
         webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
         webglRenderer.render(this.setup.shapeScene, this.setup.camera);
         this.needsRender = false;
@@ -57,7 +60,7 @@ export class Shape {
         return new SimpleGeometry(mesh, this.invalidate);
     };
 
-    useLineGeometry = (): SimpleGeometry => {
+    useLineGeometry = (updateLoop: ModelUpdateLoop): SimpleGeometry => {
         const material = new MeshBasicMaterial({ color: 0xffff00 });
 
         material.onBeforeCompile = shader => {
@@ -79,13 +82,24 @@ export class Shape {
             shader.fragmentShader = editLines(shader.fragmentShader, lines => {
                 lines.splice(0, 0, [
                     ...varryingDeclarations,
+                    'uniform float uCameraDistance;'
                 ].join('\n'));
 
                 lines.splice(lines.length - 1, 0, `
-                    float width = 0.02;
+                    float width = uCameraDistance;
                     float mask = (vSide < -width) || (vSide > width) ? 0.0 : 1.0;
                     gl_FragColor = vec4(1.0, 1.0, 1.0, mask);
                 `);
+            });
+
+            const cameraDistanceUniform = new Uniform(1);
+            shader.uniforms['uCameraDistance'] = cameraDistanceUniform;
+
+            updateLoop.add(common => {
+                // cameraDistanceUniform.value = common.worldCamera.position.y;
+                const ratio = common.worldCamera.position.y * 0.00001;
+                // console.log(ratio);
+                cameraDistanceUniform.value = ratio;
             });
         };
 

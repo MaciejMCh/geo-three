@@ -111,7 +111,8 @@
 			["Radial", Geo.LODRadial]
 		];
 
-		const renderEnviroment = new Geo.RenderEnviroment(renderer, new Geo.DeferredRenderer(), new Geo.ShaderUniforms);
+		var camera = new THREE.PerspectiveCamera(80, 1, 1e2, 1e12);
+		const renderEnviroment = new Geo.RenderEnviroment(renderer, new Geo.DeferredRenderer(), new Geo.ShaderUniforms, camera);
 
 		var ids = ["mapbox_api", "heremaps_id", "heremaps_code", "bing_api", "maptiler_api", "openmap_tiles_server"];
 		for(var i = 0; i < ids.length; i++) {
@@ -222,8 +223,7 @@
 		);
 		scene.add(map);
 		map.updateMatrixWorld(true);
-		
-		var camera = new THREE.PerspectiveCamera(80, 1, 1e2, 1e12);
+	
 
 		// var test = new THREE.Mesh(new Geo.MapNodeGeometry(1e6, 1e6, 8.0, 8.0, true, 2e5), new THREE.MeshPhongMaterial({wireframe: false, color: 0xFFFFFF}));
 		// test.position.set(0, 1e6);

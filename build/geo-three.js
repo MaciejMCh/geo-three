@@ -1597,7 +1597,8 @@
 	                        this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 	                    });
 	                    const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
-	                    const geometryHandle = polygonShape.useLineGeometry();
+	                    polygonShape.continousRerender = true;
+	                    const geometryHandle = polygonShape.useLineGeometry(this.renderEnviroment.modelUpdateLoop);
 	                    geometryHandle.updateGeometry(new PathGeometry$1(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
 	                };
 	                displayTriangle('second', [
@@ -2149,6 +2150,7 @@
 	        const { webGlRenderer, deferredRenderer } = renderEnviroment;
 	        requestAnimationFrame(animate);
 	        controls.update();
+	        renderEnviroment.modelUpdateLoop.tick();
 	        const rootRenderTarget = webGlRenderer.getRenderTarget();
 	        deferredRenderer.render(webGlRenderer);
 	        webGlRenderer.setRenderTarget(rootRenderTarget);
@@ -2157,11 +2159,28 @@
 	    animate();
 	};
 
+	class ModelUpdateLoop {
+	    constructor(common) {
+	        this.common = common;
+	        this.updates = [];
+	        this.add = (handler) => {
+	            this.updates.push(handler);
+	        };
+	        this.tick = () => {
+	            this.updates.forEach(update => {
+	                update(this.common);
+	            });
+	        };
+	    }
+	}
+
 	class RenderEnviroment {
-	    constructor(webGlRenderer, deferredRenderer, shaderUniforms) {
+	    constructor(webGlRenderer, deferredRenderer, shaderUniforms, worldCamera) {
 	        this.webGlRenderer = webGlRenderer;
 	        this.deferredRenderer = deferredRenderer;
 	        this.shaderUniforms = shaderUniforms;
+	        this.worldCamera = worldCamera;
+	        this.modelUpdateLoop = new ModelUpdateLoop({ worldCamera: this.worldCamera });
 	        this.setupShapes = (texelWorldSpace, texelWorldTransform) => {
 	            this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
 	            this.shaderUniforms.update.shapes.bufferTexture(this.deferredRenderer.shapes.bufferTexture);
@@ -2201,11 +2220,11 @@
 	        this.debugIdentity = debugIdentity;
 	        this.setup = setup;
 	        this.needsRender = true;
+	        this.continousRerender = false;
 	        this.render = (webglRenderer) => {
-	            if (!this.needsRender) {
+	            if (!this.needsRender && !this.continousRerender) {
 	                return;
 	            }
-	            console.log('render shape', this.debugIdentity, this.setup.shapeScene.children);
 	            webglRenderer.setRenderTarget(this.setup.bufferRenderTarget);
 	            webglRenderer.render(this.setup.shapeScene, this.setup.camera);
 	            this.needsRender = false;
@@ -2218,7 +2237,7 @@
 	            this.invalidate();
 	            return new SimpleGeometry(mesh, this.invalidate);
 	        };
-	        this.useLineGeometry = () => {
+	        this.useLineGeometry = (updateLoop) => {
 	            const material = new three.MeshBasicMaterial({ color: 0xffff00 });
 	            material.onBeforeCompile = shader => {
 	                const varryingDeclarations = [
@@ -2238,12 +2257,19 @@
 	                shader.fragmentShader = editLines(shader.fragmentShader, lines => {
 	                    lines.splice(0, 0, [
 	                        ...varryingDeclarations,
+	                        'uniform float uCameraDistance;'
 	                    ].join('\n'));
 	                    lines.splice(lines.length - 1, 0, `
-                    float width = 0.02;
+                    float width = uCameraDistance;
                     float mask = (vSide < -width) || (vSide > width) ? 0.0 : 1.0;
                     gl_FragColor = vec4(1.0, 1.0, 1.0, mask);
                 `);
+	                });
+	                const cameraDistanceUniform = new three.Uniform(1);
+	                shader.uniforms['uCameraDistance'] = cameraDistanceUniform;
+	                updateLoop.add(common => {
+	                    const ratio = common.worldCamera.position.y * 0.00001;
+	                    cameraDistanceUniform.value = ratio;
 	                });
 	            };
 	            const mesh = new three.Mesh(new three.ShapeBufferGeometry(), material);

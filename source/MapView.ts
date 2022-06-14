@@ -177,7 +177,8 @@ export class MapView extends Mesh
 					});
 
 					const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
-					const geometryHandle = polygonShape.useLineGeometry();
+					polygonShape.continousRerender = true;
+					const geometryHandle = polygonShape.useLineGeometry(this.renderEnviroment.modelUpdateLoop);
 					//geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
 					geometryHandle.updateGeometry(new PathGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
 					
