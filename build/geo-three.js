@@ -1448,9 +1448,9 @@
 	    return { lhs, rhs };
 	};
 	const sideFactor = (pathSide) => ({
-	    'left': 0,
-	    'core': 0.5,
-	    'right': 1.0,
+	    'left': -1,
+	    'core': 0,
+	    'right': 1,
 	})[pathSide];
 	const makePathGeometry = (geopositions, geometryTexelWorldSpace) => {
 	    const coordinatesList = geopositions.map(vertex => vertex.worldTexel);
@@ -2240,7 +2240,9 @@
 	                        ...varryingDeclarations,
 	                    ].join('\n'));
 	                    lines.splice(lines.length - 1, 0, `
-                    gl_FragColor = vec4(vSide, vSide, vSide, 10);
+                    float width = 0.02;
+                    float mask = (vSide < -width) || (vSide > width) ? 0.0 : 1.0;
+                    gl_FragColor = vec4(1.0, 1.0, 1.0, mask);
                 `);
 	                });
 	            };

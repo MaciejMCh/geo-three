@@ -52,9 +52,9 @@ const makeWings = (leadingCore: Vector2, trailingCore: Vector2, width: number, r
 }
 
 const sideFactor = (pathSide: PathSide) => ({
-    'left': 0,
-    'core': 0.5,
-    'right': 1.0,
+    'left': -1,
+    'core': 0,
+    'right': 1,
 })[pathSide]
 
 export const makePathGeometry = (geopositions: Geoposition[], geometryTexelWorldSpace: LinearSpace2d) => {
