@@ -5,8 +5,8 @@ import { Geometry } from './geometries';
 
 const frameBufferSize = () => {
     return {
-        width: window.innerWidth * window.devicePixelRatio,
-        height: window.innerHeight * window.devicePixelRatio,
+        width: window.innerWidth * window.devicePixelRatio * 2,
+        height: window.innerHeight * window.devicePixelRatio * 2,
     };
 }
 

@@ -1607,6 +1607,10 @@
 	                    new Geoposition({ longitude: 58.287581720, latitude: 23.596895216 }),
 	                    new Geoposition({ longitude: 58.276974961, latitude: 23.593147083 }),
 	                ]);
+	                displayTriangle('line', [
+	                    new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
+	                    new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
+	                ]);
 	            }, 1000);
 	        }
 	    }
@@ -2191,8 +2195,8 @@
 
 	const frameBufferSize = () => {
 	    return {
-	        width: window.innerWidth * window.devicePixelRatio,
-	        height: window.innerHeight * window.devicePixelRatio,
+	        width: window.innerWidth * window.devicePixelRatio * 2,
+	        height: window.innerHeight * window.devicePixelRatio * 2,
 	    };
 	};
 	class SimpleGeometry {
