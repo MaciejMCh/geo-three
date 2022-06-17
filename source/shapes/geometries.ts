@@ -1,7 +1,6 @@
-import { BufferAttribute, BufferGeometry, Shape, ShapeBufferGeometry, Vector2 } from 'three';
-import { Geoposition } from '../nodes/primitive';
-import { LinearTransform2d, wordSpaceTexelFunction } from '../utils/LinearFunction';
-import { LinearSpace2d, numberSpace, transform } from '../utils/LinearTransform';
+import { LinearSpace2, LinearTransform2d, numberSpace, transform } from 'geometry';
+import { GeographicToProjectedConversion } from 'geometry/lib/spatialConversion';
+import { Shape, ShapeBufferGeometry, Vector2 } from 'three';
 import { makePathGeometry } from './makePathGeometry';
 
 export interface Geometry {
@@ -15,7 +14,7 @@ export class PolygonGeometry implements Geometry {
 
     get shapeGeometry() {
         if (!this._shapeGeometry) {
-            const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2d);
+            const frameSpaceVertices = transform.vertices(this.vertices, this.geometryTexelWorldSpace, numberSpace.frame2);
             const coordinatesList = frameSpaceVertices.map(vertex => new Vector2(vertex.x, vertex.y));
 
             console.log('coords', coordinatesList);
@@ -25,8 +24,8 @@ export class PolygonGeometry implements Geometry {
     }
 
     constructor(
-        private vertices: Geoposition[],
-        private readonly geometryTexelWorldSpace: LinearSpace2d,
+        private vertices: GeographicToProjectedConversion[],
+        private readonly geometryTexelWorldSpace: LinearSpace2<'projected'>,
         public readonly worldToFrameTransform: LinearTransform2d,
     ) {}
 }
@@ -42,8 +41,8 @@ export class PathGeometry implements Geometry {
     }
 
     constructor(
-        private vertices: Geoposition[],
-        private readonly geometryTexelWorldSpace: LinearSpace2d,
+        private vertices: GeographicToProjectedConversion[],
+        private readonly geometryTexelWorldSpace: LinearSpace2<'projected'>,
         public readonly worldToFrameTransform: LinearTransform2d,
     ) {}
 }

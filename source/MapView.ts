@@ -1,4 +1,4 @@
-import {BufferGeometry, Camera, Color, ExtrudeGeometry, Group, Material, Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene, Shape, ShapeBufferGeometry, Uniform, Vector2, Vector3, Vector4, WebGLRenderer} from 'three';
+import {BufferGeometry, Camera, Group, Material, Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene, WebGLRenderer} from 'three';
 import {OpenStreetMapsProvider} from './providers/OpenStreetMapsProvider';
 import {MapNode} from './nodes/MapNode';
 import {MapHeightNode} from './nodes/MapHeightNode';
@@ -9,12 +9,11 @@ import {LODRaycast} from './lod/LODRaycast';
 import {MapProvider} from './providers/MapProvider';
 import {LODControl} from './lod/LODControl';
 import {MapMartiniHeightNode} from './nodes/MapMartiniHeightNode';
-import { Geoposition } from './nodes/primitive';
-import { wordSpaceTexelFunction } from './utils/LinearFunction';
-import { numberSpace, transform } from './utils/LinearTransform';
-import { Shapes } from './shapes/Shapes';
 import { RenderEnviroment } from './RenderEnviroment';
-import { PathGeometry, PolygonGeometry } from './shapes/geometries';
+import { numberSpace, wordSpaceTexelFunction } from 'geometry';
+import { GeographicProjector, GeographicToProjectedConversion } from 'geometry/lib/spatialConversion';
+import { PathGeometry } from './shapes/geometries';
+import { UnitsUtils } from './utils/UnitsUtils';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -159,50 +158,71 @@ export class MapView extends Mesh
 			this.root.mapView = this;
 			this.add(this.root);
 
-			// setTimeout(() => {
-			// 	const shapesTexelWorldSpace = numberSpace.rectangleWorldTexels(
-			// 		new Geoposition({ longitude: 58.25307378740236, latitude: 23.58640578797679 }),
-			// 		new Geoposition({ longitude: 58.32039938153885, latitude: 23.61614678270696 }),
-			// 	);
-			// 	const xFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.x);
-			// 	const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
-			// 	const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
-			// 	this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform);
-				
-			// 	const displayTriangle = (name: string, vertices: Geoposition[]) => {
-			// 		vertices.forEach(vertex => {
-			// 			const identity = this.renderEnviroment.shaderUniforms.create.circle();
-			// 			this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 100);
-			// 			this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
-			// 		});
+			const projector: GeographicProjector = ({
+				forward: geoposition => {
+					const coords = UnitsUtils.datumsToSpherical(geoposition.y, geoposition.x);
+					return {
+						x: coords.x,
+						y: -coords.y,
+					};
+				},
+				backward: () => ({ x: 1, y: 1 }),
+			});
 
-			// 		const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
-			// 		polygonShape.continousRerender = true;
-			// 		const geometryHandle = polygonShape.useLineGeometry(this.renderEnviroment.modelUpdateLoop);
-			// 		//geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
-			// 		geometryHandle.updateGeometry(new PathGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+			const Geoposition = (p: { longitude: number; latitude: number}) => GeographicToProjectedConversion.withGeoposition(
+				projector,
+				{
+					x: p.longitude,
+					y: p.latitude,
+				},
+			);
+
+			setTimeout(() => {
+				console.log('qweqewads');
+				console.log('numberSpace', numberSpace);
+				const shapesTexelWorldSpace = numberSpace.rectangleWorldTexels(
+					Geoposition({ longitude: 58.25307378740236, latitude: 23.58640578797679 }),
+					Geoposition({ longitude: 58.32039938153885, latitude: 23.61614678270696 }),
+				);
+				const xFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.x);
+				const yFunc = wordSpaceTexelFunction(shapesTexelWorldSpace.y);
+				const shapesTexelWorldTransform = { x: xFunc, y: yFunc };
+				this.renderEnviroment.setupShapes(shapesTexelWorldSpace, shapesTexelWorldTransform);
+				
+				const displayTriangle = (name: string, vertices: GeographicToProjectedConversion[]) => {
+					vertices.forEach(vertex => {
+						const identity = this.renderEnviroment.shaderUniforms.create.circle();
+						this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 100);
+						this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
+					});
+
+					const polygonShape = this.renderEnviroment.deferredRenderer.shapes.makeShape(name);
+					polygonShape.continousRerender = true;
+					const geometryHandle = polygonShape.useLineGeometry(this.renderEnviroment.modelUpdateLoop);
+					//geometryHandle.updateGeometry(new PolygonGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
+					geometryHandle.updateGeometry(new PathGeometry(vertices, shapesTexelWorldSpace, shapesTexelWorldTransform));
 					
-			// 	};
+				};
 				
-			// 	// displayTriangle('first', [
-			// 	// 	new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
-			// 	// 	new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
-			// 	// 	new Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
-			// 	// ]);
+				displayTriangle('first', [
+					Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
+					Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
+					Geoposition({ longitude: 58.254998864, latitude: 23.598330976 }),
+				]);
 
-			// 	// displayTriangle('second', [
-			// 	// 	new Geoposition({ longitude: 58.278255654, latitude: 23.604672008 }),
-			// 	// 	new Geoposition({ longitude: 58.288468354, latitude: 23.606240162 }),
-			// 	// 	new Geoposition({ longitude: 58.287581720, latitude: 23.596895216 }),
-			// 	// 	new Geoposition({ longitude: 58.276974961, latitude: 23.593147083 }),
-			// 	// ]);
+				displayTriangle('second', [
+					Geoposition({ longitude: 58.278255654, latitude: 23.604672008 }),
+					Geoposition({ longitude: 58.288468354, latitude: 23.606240162 }),
+					Geoposition({ longitude: 58.287581720, latitude: 23.596895216 }),
+					Geoposition({ longitude: 58.276974961, latitude: 23.593147083 }),
+				]);
 
-			// 	// displayTriangle('line', [
-			// 	// 	new Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
-			// 	// 	new Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
-			// 	// ]);
+				displayTriangle('line', [
+					Geoposition({ longitude: 58.283998864, latitude: 23.589330976 }),
+					Geoposition({ longitude: 58.254998864, latitude: 23.589330976 }),
+				]);
 
-			// }, 1000);
+			}, 3000);
 		}
 	}
 

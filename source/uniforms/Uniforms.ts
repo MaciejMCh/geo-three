@@ -1,7 +1,7 @@
+import { GeographicToProjectedConversion } from 'geometry/lib/spatialConversion';
 import { IUniform, Shader, Uniform, Vector3, MathUtils, Texture, LinearFilter, NearestFilter, WebGLRenderTarget } from 'three';
-import { Geoposition } from '../nodes/primitive';
-import { LinearTransform2d } from '../utils/LinearFunction';
 import { constants } from './constants';
+import { LinearTransform2d } from 'geometry';
 
 type Uniforms =  { [uniform: string]: IUniform<any> };
 
@@ -30,8 +30,8 @@ export class ShaderUniforms {
 
     update = {
         circle: {
-            geoposition: (identity: DrawableIdentity, geoposition: Geoposition) => {
-                this.circlesByIds[identity.raw]['worldOrigin'] = geoposition.worldPosition;
+            geoposition: (identity: DrawableIdentity, geoposition: GeographicToProjectedConversion) => {
+                this.circlesByIds[identity.raw]['worldOrigin'] = geoposition.worldSurfacePosition;
             },
             radius: (identity: DrawableIdentity, radius: number) => {
                 this.circlesByIds[identity.raw]['radius'] = radius;
