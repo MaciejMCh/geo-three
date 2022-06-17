@@ -21,4 +21,8 @@ export class RenderEnviroment {
         this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
         this.shaderUniforms.update.shapes.bufferTexture(this.deferredRenderer.shapes.bufferTexture);
     };
+
+    waitForUniforms = async () => {
+        await this.shaderUniforms.waitForSetup();
+    };
 }

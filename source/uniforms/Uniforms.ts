@@ -16,6 +16,8 @@ export class ShaderUniforms {
 
     private circlesCount = 0;
 
+    private waitingForSetup: Array<() => void> = [];
+
     create = {
         circle: () => {
             const identity = new DrawableIdentity();
@@ -65,13 +67,27 @@ export class ShaderUniforms {
             this.circlesCount -= 1;
             this.uniforms['circlesCount'].value = this.circlesCount;
         },
-    }
+    };
+
+    waitForSetup = async (): Promise<void> => {
+         if (this.uniforms) {
+            return Promise.resolve();
+         }
+
+         return new Promise(resolve => {
+            this.waitingForSetup.push(resolve);
+         });
+    };
 
     addShader = (shader: Shader) => {
         if (!this.uniforms) {
             const uniforms = shader.uniforms;
-            this.setup(uniforms);
             this.uniforms = uniforms;
+            this.setup(uniforms);
+            
+            this.waitingForSetup.forEach(resolve => {
+                resolve();
+            });
         }
 
         shader.uniforms = this.uniforms;

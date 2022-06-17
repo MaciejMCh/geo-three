@@ -33,3 +33,7 @@ export { setupRenderLoop } from './renderer/setupRenderLoop';
 export { RenderEnviroment } from './RenderEnviroment';
 export { DeferredRenderer } from './renderer/DeferredRenderer';
 export { ShaderUniforms } from './uniforms/Uniforms';
+export * from './utils/LinearTransform';
+export * from './nodes/primitive';
+export * from './utils/LinearFunction';
+export * from './shapes/geometries';
