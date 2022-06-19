@@ -1,4 +1,4 @@
-import { LinearSpace2, LinearTransform2d, numberSpace, transform } from 'geometry';
+import { LinearSpace2, LinearTransform2d, numberSpace, ProjectedSpatialReference, transform } from 'geometry';
 import { GeographicToProjectedConversion } from 'geometry/lib/spatialConversion';
 import { Shape, ShapeBufferGeometry, Vector2 } from 'three';
 import { makePathGeometry } from './makePathGeometry';
@@ -25,7 +25,7 @@ export class PolygonGeometry implements Geometry {
 
     constructor(
         private vertices: GeographicToProjectedConversion[],
-        private readonly geometryTexelWorldSpace: LinearSpace2<'projected'>,
+        private readonly geometryTexelWorldSpace: LinearSpace2<ProjectedSpatialReference>,
         public readonly worldToFrameTransform: LinearTransform2d,
     ) {}
 }
@@ -42,7 +42,7 @@ export class PathGeometry implements Geometry {
 
     constructor(
         private vertices: GeographicToProjectedConversion[],
-        private readonly geometryTexelWorldSpace: LinearSpace2<'projected'>,
+        private readonly geometryTexelWorldSpace: LinearSpace2<ProjectedSpatialReference>,
         public readonly worldToFrameTransform: LinearTransform2d,
     ) {}
 }

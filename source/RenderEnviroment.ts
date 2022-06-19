@@ -1,4 +1,4 @@
-import { LinearSpace2, LinearTransform2d } from 'geometry';
+import { LinearSpace2, LinearTransform2d, ProjectedSpatialReference } from 'geometry';
 import { PerspectiveCamera, WebGLRenderer } from 'three';
 import { DeferredRenderer } from './renderer/DeferredRenderer';
 import { ShaderUniforms } from './uniforms';
@@ -16,7 +16,7 @@ export class RenderEnviroment {
         webGlRenderer.setClearColor(0x000000, 0);
     }
 
-    setupShapes = (texelWorldSpace: LinearSpace2<'projected'>, texelWorldTransform: LinearTransform2d) => {
+    setupShapes = (texelWorldSpace: LinearSpace2<ProjectedSpatialReference>, texelWorldTransform: LinearTransform2d) => {
         this.shaderUniforms.update.shapes.worldToFrameTransform(texelWorldTransform);
         this.shaderUniforms.update.shapes.bufferTexture(this.deferredRenderer.shapes.bufferTexture);
     };

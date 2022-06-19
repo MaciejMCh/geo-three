@@ -1,5 +1,5 @@
 import { BufferAttribute, BufferGeometry } from 'three';
-import { transform, WorldSurfacePosition, arithmetic, convert, LinearSpace2, Line, numberSpace } from 'geometry';
+import { transform, WorldSurfacePosition, arithmetic, convert, LinearSpace2, Line, numberSpace, GeographicSpatialReference, ProjectedSpatialReference, FrameSpatialReference } from 'geometry';
 import { GeographicToProjectedConversion } from 'geometry/lib/spatialConversion';
 
 type PathSide = 'left' | 'core' | 'right';
@@ -17,8 +17,8 @@ const makeWings = (
         (leadingCore.y - trailingCore.y) * factor,
         (leadingCore.x - trailingCore.x) * factor,
     );
-    const lhs = arithmetic.vec2.add(leadingCore, convert.toLinear({ angle: angle + (Math.PI * 0.5), length: width }));
-    const rhs = arithmetic.vec2.add(leadingCore, convert.toLinear({ angle: angle - (Math.PI * 0.5), length: width }));
+    const lhs = arithmetic.vec2.add(leadingCore, convert.toLinear({ angle: angle + (Math.PI * 0.5), length: width, ref: 'projected' }));
+    const rhs = arithmetic.vec2.add(leadingCore, convert.toLinear({ angle: angle - (Math.PI * 0.5), length: width, ref: 'projected' }));
     return { lhs, rhs };
 }
 
@@ -28,13 +28,13 @@ const sideFactor = (pathSide: PathSide) => ({
     'right': 1,
 })[pathSide]
 
-export const makePathGeometry = (geopositions: GeographicToProjectedConversion[], geometryTexelWorldSpace: LinearSpace2<'geographic'>) => {
+export const makePathGeometry = (geopositions: GeographicToProjectedConversion[], geometryTexelWorldSpace: LinearSpace2<ProjectedSpatialReference>) => {
     const coordinatesList = geopositions.map(vertex => vertex.worldSurfacePosition);
     const width = WIDTH;
 
     let previous: {
-        lhsWing: Line<'projected'>;
-        rhsWing: Line<'projected'>;
+        lhsWing: Line<ProjectedSpatialReference>;
+        rhsWing: Line<ProjectedSpatialReference>;
         indices: {
             core: number;
             lhsWing: number;
@@ -48,7 +48,7 @@ export const makePathGeometry = (geopositions: GeographicToProjectedConversion[]
     const stats: number[] = [];
 
     const appendVertex = (vertex: WorldSurfacePosition, pathSide: PathSide) => {
-        const frameSpaceVertex = transform.vertex(vertex, geometryTexelWorldSpace, numberSpace.frame2);
+        const frameSpaceVertex = transform.vertex<FrameSpatialReference>(vertex, geometryTexelWorldSpace, numberSpace.frame2);
         vertices.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
         stats.push(sideFactor(pathSide), sideFactor(pathSide));
         verticesCount += 1;
