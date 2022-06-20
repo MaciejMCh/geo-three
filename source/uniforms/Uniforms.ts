@@ -31,7 +31,11 @@ export class ShaderUniforms {
     update = {
         circle: {
             geoposition: (identity: DrawableIdentity, geoposition: GeographicToProjectedConversion) => {
-                this.circlesByIds[identity.raw]['worldOrigin'] = geoposition.worldSurfacePosition;
+                this.circlesByIds[identity.raw]['worldOrigin'] = new Vector3(
+                    geoposition.worldSurfacePosition.x,
+                    0,
+                    geoposition.worldSurfacePosition.y,
+                );
             },
             radius: (identity: DrawableIdentity, radius: number) => {
                 this.circlesByIds[identity.raw]['radius'] = radius;

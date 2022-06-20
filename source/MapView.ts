@@ -164,9 +164,10 @@ export class MapView extends Mesh
 					return {
 						x: coords.x,
 						y: -coords.y,
+						ref: 'projected',
 					};
 				},
-				backward: () => ({ x: 1, y: 1 }),
+				backward: () => ({ x: 1, y: 1, ref: 'geographic' }),
 			});
 
 			const Geoposition = (p: { longitude: number; latitude: number}) => GeographicToProjectedConversion.withGeoposition(
@@ -174,6 +175,7 @@ export class MapView extends Mesh
 				{
 					x: p.longitude,
 					y: p.latitude,
+					ref: 'geographic',
 				},
 			);
 
@@ -193,7 +195,7 @@ export class MapView extends Mesh
 			// 	const displayTriangle = (name: string, vertices: GeographicToProjectedConversion[]) => {
 			// 		vertices.forEach(vertex => {
 			// 			const identity = this.renderEnviroment.shaderUniforms.create.circle();
-			// 			this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 100);
+			// 			this.renderEnviroment.shaderUniforms.update.circle.radius(identity, 300);
 			// 			this.renderEnviroment.shaderUniforms.update.circle.geoposition(identity, vertex);
 			// 		});
 
