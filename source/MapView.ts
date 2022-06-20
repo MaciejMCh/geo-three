@@ -1,4 +1,4 @@
-import {BufferGeometry, Camera, Group, Material, Mesh, MeshBasicMaterial, Object3D, Raycaster, Scene, WebGLRenderer} from 'three';
+import {BoxGeometry, BufferGeometry, Camera, Group, Material, Mesh, MeshBasicMaterial, Object3D, PerspectiveCamera, Raycaster, Scene, WebGLRenderer} from 'three';
 import {OpenStreetMapsProvider} from './providers/OpenStreetMapsProvider';
 import {MapNode} from './nodes/MapNode';
 import {MapHeightNode} from './nodes/MapHeightNode';
@@ -14,6 +14,7 @@ import { numberSpace, wordSpaceTexelFunction, arithmetic } from 'geometry';
 import { GeographicProjector, GeographicToProjectedConversion } from 'geometry/lib/spatialConversion';
 import { PathGeometry } from './shapes/geometries';
 import { UnitsUtils } from './utils/UnitsUtils';
+import { Pin } from './aerial';
 
 /**
  * Map viewer is used to read and display map tiles from a server.
@@ -178,6 +179,16 @@ export class MapView extends Mesh
 					ref: 'geographic',
 				},
 			);
+
+			setTimeout(() => {
+				const pin = Pin.make(this.renderEnviroment);
+
+				// const dim = 10;
+				// const geometry = new BoxGeometry(dim, dim, dim);
+				// const material = new MeshBasicMaterial( {color: 0xff00ff} );
+				// const cube = new Mesh( geometry, material );
+				// this.renderEnviroment.worldCamera.add(cube);
+			}, 2000);
 
 			// setTimeout(() => {
 			// 	console.log('qweqewads');

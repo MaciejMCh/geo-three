@@ -1,5 +1,5 @@
 import { LinearSpace2, LinearTransform2d, ProjectedSpatialReference } from 'geometry';
-import { PerspectiveCamera, WebGLRenderer } from 'three';
+import { PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 import { DeferredRenderer } from './renderer/DeferredRenderer';
 import { ShaderUniforms } from './uniforms';
 import { ModelUpdateLoop } from './uniforms/ModelUpdateLoop';
@@ -11,6 +11,7 @@ export class RenderEnviroment {
         public readonly webGlRenderer: WebGLRenderer,
         public readonly deferredRenderer: DeferredRenderer,
         public readonly shaderUniforms: ShaderUniforms,
+        public readonly worldScene: Scene,
         public readonly worldCamera: PerspectiveCamera,
     ) {
         webGlRenderer.setClearColor(0x000000, 0);

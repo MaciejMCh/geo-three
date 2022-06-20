@@ -111,8 +111,14 @@
 			["Radial", Geo.LODRadial]
 		];
 
-		var camera = new THREE.PerspectiveCamera(80, 1, 1e2, 1e12);
-		const renderEnviroment = new Geo.RenderEnviroment(renderer, new Geo.DeferredRenderer(), new Geo.ShaderUniforms, camera);
+		var camera = new THREE.PerspectiveCamera(80, 1, 1e-3, 1e12);
+		const renderEnviroment = new Geo.RenderEnviroment(
+			renderer,
+			new Geo.DeferredRenderer(),
+			new Geo.ShaderUniforms,
+			scene,
+			camera,
+		);
 
 		var ids = ["mapbox_api", "heremaps_id", "heremaps_code", "bing_api", "maptiler_api", "openmap_tiles_server"];
 		for(var i = 0; i < ids.length; i++) {

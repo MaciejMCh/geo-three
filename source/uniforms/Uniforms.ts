@@ -36,6 +36,7 @@ export class ShaderUniforms {
                     0,
                     geoposition.worldSurfacePosition.y,
                 );
+                console.log('xddd', this.circlesByIds[identity.raw]['worldOrigin']);
             },
             radius: (identity: DrawableIdentity, radius: number) => {
                 this.circlesByIds[identity.raw]['radius'] = radius;
