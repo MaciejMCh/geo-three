@@ -111,6 +111,7 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 			].join('\n'));
 
 			lines.splice(lines.length - 1, 0, `
+				gl_FragColor = mix(gl_FragColor, vec4(0.0, 0.0, 0.0, 1.0), 0.2);
 				vec4 shapesColor = shapesColor(uShapesWorldToFrameTransform, vWorldPosition, uShapesBufferSampler);
 				gl_FragColor = mix(gl_FragColor, shapesColor, shapesColor.a);
 
