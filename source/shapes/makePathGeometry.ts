@@ -43,22 +43,43 @@ export const makePathGeometry = (geopositions: GeographicToProjectedConversion[]
     } | undefined;
 
     var verticesCount = 0;
+    var currentLength = 0;
+    var previousCoreVertex = coordinatesList[0];
+    const lengthsByIndices: { [key: number]: number } = [];
     const vertices: number[] = [];
     const indices: number[] = [];
     const stats: number[] = [];
 
-    const appendVertex = (vertex: WorldSurfacePosition, pathSide: PathSide) => {
+    const appendVertex = (vertex: WorldSurfacePosition, pathSide: PathSide, lengthIndex?: number) => {
         const frameSpaceVertex = transform.vertex<FrameSpatialReference>(vertex, geometryTexelWorldSpace, numberSpace.frame2);
         vertices.push(frameSpaceVertex.x, frameSpaceVertex.y, 0);
-        stats.push(sideFactor(pathSide), sideFactor(pathSide));
+
+        const index = (vertices.length / 3) - 1;
+        const length = (() => {
+            if (lengthIndex !== undefined) {
+                return lengthsByIndices[lengthIndex];
+            }
+
+            if (pathSide !== 'core') {
+                throw new Error('trying to compute length from not core');
+            }
+
+            const segmentLength = arithmetic.vec2.distance(previousCoreVertex, vertex);
+            currentLength += segmentLength.value;
+            lengthsByIndices[index] = currentLength;
+            previousCoreVertex = vertex;
+            return currentLength;
+        })();
+
+        stats.push(sideFactor(pathSide), length);
         verticesCount += 1;
-        return (vertices.length / 3) - 1;
+        return index;
     };
 
     const finishShape = (previousCore: WorldSurfacePosition, currentCore: WorldSurfacePosition) => {
         const currentWings = makeWings(currentCore, previousCore, width);
-        const lhsWingIndex = appendVertex(currentWings.lhs, 'left');
-        const rhsWingIndex = appendVertex(currentWings.rhs, 'right');
+        const lhsWingIndex = appendVertex(currentWings.lhs, 'left', previous.indices.core);
+        const rhsWingIndex = appendVertex(currentWings.rhs, 'right', previous.indices.core);
 
         indices.push(
             lhsWingIndex, previous.indices.core, previous.indices.lhsWing,
@@ -70,8 +91,8 @@ export const makePathGeometry = (geopositions: GeographicToProjectedConversion[]
         const wings = makeWings(currentCore, nextCore, width, true);
         const currentCoreIndex = appendVertex(currentCore, 'core');
         const nextCoreIndex = appendVertex(nextCore, 'core');
-        const lhsWingIndex = appendVertex(wings.lhs, 'left');
-        const rhsWingIndex = appendVertex(wings.rhs, 'right');
+        const lhsWingIndex = appendVertex(wings.lhs, 'left', currentCoreIndex);
+        const rhsWingIndex = appendVertex(wings.rhs, 'right', currentCoreIndex);
 
         indices.push(
             currentCoreIndex, lhsWingIndex, nextCoreIndex,
@@ -114,8 +135,8 @@ export const makePathGeometry = (geopositions: GeographicToProjectedConversion[]
         const currentRhsWingLine = Line.withPoints(currentWing.rhs, arithmetic.vec2.add(currentWing.rhs, normalizedCore));
         const rhsLinesIntersection = previous.rhsWing.intersection(currentRhsWingLine);
 
-        const lhsWingIndex = appendVertex(lhsLinesIntersection, 'left');
-        const rhsWingIndex = appendVertex(rhsLinesIntersection, 'right');
+        const lhsWingIndex = appendVertex(lhsLinesIntersection, 'left', previous.indices.core);
+        const rhsWingIndex = appendVertex(rhsLinesIntersection, 'right', previous.indices.core);
 
         indices.push(
             lhsWingIndex, previous.indices.core, previous.indices.lhsWing,

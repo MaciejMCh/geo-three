@@ -87,8 +87,10 @@ export class Shape {
 
                 lines.splice(lines.length - 1, 0, `
                     float width = uCameraDistance;
-                    float mask = (vSide < -width) || (vSide > width) ? 0.0 : 1.0;
-                    gl_FragColor = vec4(1.0, 1.0, 1.0, mask);
+                    float widthMask = (vSide < -width) || (vSide > width) ? 0.0 : 1.0;
+                    float lengthMask = mod(vLength * 0.04, 2.0) > 1.0 ? 1.0 : 0.0;
+                    float mask = widthMask * lengthMask;
+                    gl_FragColor = vec4(0.463, 0.961, 1.0, mask);
                 `);
             });
 
