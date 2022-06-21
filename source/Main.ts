@@ -34,3 +34,4 @@ export { RenderEnviroment } from './RenderEnviroment';
 export { DeferredRenderer } from './renderer/DeferredRenderer';
 export { ShaderUniforms } from './uniforms/Uniforms';
 export * from './shapes/geometries';
+export * from './aerial';

@@ -1,13 +1,15 @@
-import { BoxGeometry, BufferAttribute, BufferGeometry, IUniform, Material, Mesh, MeshBasicMaterial, PlaneBufferGeometry, Uniform, Vector2, Vector4 } from 'three';
+import { Color, Mesh, MeshBasicMaterial, PlaneBufferGeometry, TextureLoader, Uniform, Vector2, Vector3 } from 'three';
 import { RenderEnviroment } from '../RenderEnviroment';
 import { Uniforms } from '../uniforms';
 import { editLines } from '../utils/shderEditor';
-import { linear, PixelSpacePoint, PixelSpatialReference } from 'geometry';
+import { GeographicToProjectedConversion, linear, PixelSpacePoint, PixelSpatialReference } from 'geometry';
 
 export class Pin {
     private uniforms?: Uniforms;
 
     private size = linear.vec2<PixelSpatialReference>(0, 0, 'pixel');
+
+    private position?: GeographicToProjectedConversion;
 
     constructor(private mesh: Mesh) {}
 
@@ -25,15 +27,31 @@ export class Pin {
 
     uniformsDidLoad = (uniforms: Uniforms) => {
         this.uniforms = uniforms;
-        this.updateSize(this.size);
-    };
-
-    updateGeometry = () => {
         
+        this.updateSize(this.size);
+        if (this.position) {
+            this.updatePosition(this.position);
+        }
     };
 
-    displayBackground = () => {
+    displayImage = (url: string) => {
+        (this.mesh.material as MeshBasicMaterial).map = new TextureLoader().load(url);
+    };
 
+    displayOval = (color: string) => {
+        console.log('color', color);
+        (this.mesh.material as MeshBasicMaterial).color = new Color(color);
+    };
+
+    updatePosition = (position: GeographicToProjectedConversion) => {
+        this.position = position;
+
+        if (!this.uniforms) {
+            return;
+        }
+
+        const positionVector = new Vector3(position.worldSurfacePosition.x, 0, position.worldSurfacePosition.y);
+        this.uniforms['uWorldPosition'].value = positionVector;
     };
 
     updateSize = (size: PixelSpacePoint) => {
@@ -61,15 +79,15 @@ const makePinMesh = () => {
 
     const dim = 2;
     const geometry = new PlaneBufferGeometry(dim, dim);
-    const material = new MeshBasicMaterial({ color: 0xff00ff });
+    const material = new MeshBasicMaterial();
     material.onBeforeCompile = shader => {
         shader.vertexShader = editLines(shader.vertexShader, lines => {
 			lines.splice(0, 0, [
-				'uniform vec2 uSizeFactors;'
+				'uniform vec2 uSizeFactors;',
+                'uniform vec3 uWorldPosition;',
 			].join('\n'));
 			lines.splice(lines.length - 1, 0, `
-                vec3 worldPos = vec3(6488626.522566737, 0.0, -2704599.4797426015);
-                vec4 framePosition = projectionMatrix * viewMatrix * vec4(worldPos, 1.0);
+                vec4 framePosition = projectionMatrix * viewMatrix * vec4(uWorldPosition, 1.0);
                 gl_Position = vec4(position, 1.0);
                 gl_Position = vec4(
                     (position.x * uSizeFactors.x) + (framePosition.x / framePosition.z),
@@ -80,64 +98,27 @@ const makePinMesh = () => {
 			`);
 		});
 
-        shader.fragmentShader = `
-            uniform sampler2D uBufferSampler;
-
-            void main() {
-                gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
-            }
-        `;
+        shader.fragmentShader = editLines(shader.fragmentShader, lines => {
+            lines.splice(0, 0, [
+				
+			].join('\n'));
+			lines.splice(lines.length - 1, 0, `
+                
+			`);
+        });
 
         shader.uniforms['uSizeFactors'] = new Uniform(new Vector2());
+        shader.uniforms['uWorldPosition'] = new Uniform(new Vector3());
         didLoadUniforms(shader.uniforms);
     };
-    const cube = new Mesh( geometry, material );
+    const mesh = new Mesh( geometry, material );
     
     material.depthTest = false;
     material.depthWrite = false;
-    cube.renderOrder = 100;
-    cube.frustumCulled = false;
+    mesh.renderOrder = 100;
+    mesh.frustumCulled = false;
+
+    material.transparent = true;
     
-    return { mesh: cube, uniforms: uniformsPromise };
-    ///////////////////////////////
-
-    // const material = new MeshBasicMaterial({ color: 0xff00ff });
-    // material.onBeforeCompile = shader => {
-    //     shader.vertexShader = `
-    //         varying vec2 vTexel;
-
-    //         void main() {
-    //             vTexel = vec2(1.0 - ((position.x + 1.0) * 0.5), 1.0 - ((position.y + 1.0) * 0.5));
-    //             gl_Position = vec4(position, 1.0);
-    //         }
-    //     `;
-
-    //     shader.fragmentShader = `
-    //         varying vec2 vTexel;
-    //         uniform sampler2D uBufferSampler;
-
-    //         void main() {
-    //             gl_FragColor = texture2D(uBufferSampler, vTexel);
-    //             gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
-    //         }
-    //     `;
-
-    //     // shader.uniforms['uBufferSampler'] = new Uniform(bufferTexture);
-    // };
-    // material.depthTest = false;
-    // const geometry = new BufferGeometry();
-    // const vertices = [
-    //     // 0, 0, 0,
-    //     // // 0, 1, 0,
-    //     // 1, 1, 0,
-    //     // 0, 1, 0,
-
-    //     0, 0, 0,
-    //     // 0, 0, 1,
-    //     1, 0, 1,
-    //     0, 0, 1,
-    // ]
-    // geometry.setAttribute('position', new BufferAttribute(new Float32Array(vertices), 3));
-    // const mesh = new Mesh(geometry, material);
-    // return mesh;
+    return { mesh: mesh, uniforms: uniformsPromise };
 };

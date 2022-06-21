@@ -180,16 +180,17 @@ export class MapView extends Mesh
 				},
 			);
 
-			setTimeout(() => {
-				const pin = Pin.make(this.renderEnviroment);
-				pin.updateSize({ x: 50, y: 50, ref: 'pixel' });
+			// setTimeout(() => {
+			// 	const pin = Pin.make(this.renderEnviroment);
+			// 	pin.updateSize({ x: 50, y: 50, ref: 'pixel' });
+			// 	pin.displayImage('assets/images/Radio.svg');
 
-				// const dim = 10;
-				// const geometry = new BoxGeometry(dim, dim, dim);
-				// const material = new MeshBasicMaterial( {color: 0xff00ff} );
-				// const cube = new Mesh( geometry, material );
-				// this.renderEnviroment.worldCamera.add(cube);
-			}, 2000);
+			// 	// const dim = 10;
+			// 	// const geometry = new BoxGeometry(dim, dim, dim);
+			// 	// const material = new MeshBasicMaterial( {color: 0xff00ff} );
+			// 	// const cube = new Mesh( geometry, material );
+			// 	// this.renderEnviroment.worldCamera.add(cube);
+			// }, 2000);
 
 			// setTimeout(() => {
 			// 	console.log('qweqewads');
