@@ -50,6 +50,7 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 					struct Circle {
 						vec3 worldOrigin;
 						float radius;
+						vec3 color;
 					};
 
 					struct LinearFunction {
@@ -81,7 +82,12 @@ const makeMaterial = (uniforms: ShaderUniforms, renderer: WebGLRenderer) => {
 						float otherLimit = circle.radius - (depth * 0.004);
 						bool isRed = dist < circle.radius && dist > otherLimit;
 						if (isRed) {
-							return vec4(1.0, 0.0, 0.0, 1.0);
+							float angle = atan(circle.worldOrigin.z - worldPosition.z, circle.worldOrigin.x - worldPosition.x);
+							if (mod(angle * circle.radius * 0.04, 2.0) < 1.0) {
+								return vec4(circle.color, 1.0);
+							} else {
+								return vec4(0.0, 0.0, 0.0, 0.0);
+							}
 						} else {
 							return vec4(0.0, 0.0, 0.0, 0.0);
 						}

@@ -40,6 +40,9 @@ export class ShaderUniforms {
             radius: (identity: DrawableIdentity, radius: number) => {
                 this.circlesByIds[identity.raw]['radius'] = radius;
             },
+            color: (identity: DrawableIdentity, color: [number, number, number]) => {
+                this.circlesByIds[identity.raw]['color'] = new Vector3(color[0], color[1], color[2]);
+            }
         },
         shapes: {
             worldToFrameTransform: (worldToFrameTransform: LinearTransform2d) => {
@@ -105,6 +108,7 @@ export class ShaderUniforms {
     private makeBlankCircle = () => ({
         worldOrigin: new Vector3(),
         radius: 0,
+        color: new Vector3(),
     });
 
     private setupCircles = (uniforms: Uniforms) => {
