@@ -3,7 +3,7 @@ import { IUniform, Shader, Uniform, Vector3, MathUtils, Texture, LinearFilter, N
 import { constants } from './constants';
 import { LinearTransform2d } from 'geometry';
 
-type Uniforms =  { [uniform: string]: IUniform<any> };
+export type Uniforms =  { [uniform: string]: IUniform<any> };
 
 export class DrawableIdentity {
     readonly raw = MathUtils.generateUUID();
@@ -36,7 +36,6 @@ export class ShaderUniforms {
                     0,
                     geoposition.worldSurfacePosition.y,
                 );
-                console.log('xddd', this.circlesByIds[identity.raw]['worldOrigin']);
             },
             radius: (identity: DrawableIdentity, radius: number) => {
                 this.circlesByIds[identity.raw]['radius'] = radius;

@@ -1,74 +1,84 @@
-import { BoxGeometry, BufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial, PlaneBufferGeometry, Uniform, Vector4 } from 'three';
+import { BoxGeometry, BufferAttribute, BufferGeometry, IUniform, Material, Mesh, MeshBasicMaterial, PlaneBufferGeometry, Uniform, Vector2, Vector4 } from 'three';
 import { RenderEnviroment } from '../RenderEnviroment';
+import { Uniforms } from '../uniforms';
 import { editLines } from '../utils/shderEditor';
+import { linear, PixelSpacePoint, PixelSpatialReference } from 'geometry';
 
 export class Pin {
+    private uniforms?: Uniforms;
+
+    private size = linear.vec2<PixelSpatialReference>(0, 0, 'pixel');
+
     constructor(private mesh: Mesh) {}
 
     static make = (renderEnviroment: RenderEnviroment) => {
-        setInterval(() => {
-            console.log(renderEnviroment.worldCamera.projectionMatrix);
-        }, 1000);
-        const mesh = makePinMesh();
+        const { mesh, uniforms } = makePinMesh();
         renderEnviroment.worldScene.add(mesh);
-        return new Pin(mesh);
+        const me = new Pin(mesh);
+
+        uniforms.then(loadedUniforms => {
+            me.uniformsDidLoad(loadedUniforms);
+        });
+
+        return me;
+    };
+
+    uniformsDidLoad = (uniforms: Uniforms) => {
+        this.uniforms = uniforms;
+        this.updateSize(this.size);
     };
 
     updateGeometry = () => {
-
+        
     };
 
     displayBackground = () => {
 
-    };   
+    };
+
+    updateSize = (size: PixelSpacePoint) => {
+        this.size = size;
+
+        if (!this.uniforms) {
+            return;
+        }
+
+        this.uniforms['uSizeFactors'].value = this.sizeFactors(size);
+    };
+
+    sizeFactors = (size: PixelSpacePoint) => new Vector2(
+        size.x / window.innerWidth,
+        size.y / window.innerHeight,
+    );
 }
 
 const makePinMesh = () => {
-    // /////////////// proof of xd
-    // const dim = 1000000;
-    // const geometry = new BoxGeometry(dim, dim, dim);
-    // geometry.translate(0, -5 * dim, 0);
-    // const material = new MeshBasicMaterial( {color: 0xff00ff} );
-    // const cube = new Mesh( geometry, material );
-    
-    // material.depthTest = false;
-    // material.depthWrite = false;
-    // cube.renderOrder = 1;
-    
-    // return cube;
-    // ///////////////////////////////
+    var didLoadUniforms: (uniforms: Uniforms) => void;
 
+    const uniformsPromise = new Promise<Uniforms>(resolve => {
+        didLoadUniforms = resolve;
+    });
 
-    /////////////// proof of xd2
     const dim = 2;
     const geometry = new PlaneBufferGeometry(dim, dim);
-    console.log('geometry', geometry.attributes['position']);
     const material = new MeshBasicMaterial({ color: 0xff00ff });
     material.onBeforeCompile = shader => {
         shader.vertexShader = editLines(shader.vertexShader, lines => {
 			lines.splice(0, 0, [
-				
+				'uniform vec2 uSizeFactors;'
 			].join('\n'));
 			lines.splice(lines.length - 1, 0, `
                 vec3 worldPos = vec3(6488626.522566737, 0.0, -2704599.4797426015);
                 vec4 framePosition = projectionMatrix * viewMatrix * vec4(worldPos, 1.0);
                 gl_Position = vec4(position, 1.0);
                 gl_Position = vec4(
-                    (position.x * 0.1) + (framePosition.x / framePosition.z),
-                    (position.y * 0.1) + (framePosition.y / framePosition.z),
+                    (position.x * uSizeFactors.x) + (framePosition.x / framePosition.z),
+                    (position.y * uSizeFactors.y) + (framePosition.y / framePosition.z),
                     0.0,
                     1.0
                 );
 			`);
 		});
-        // shader.vertexShader = `
-        //     varying vec2 vTexel;
-
-        //     void main() {
-        //         vTexel = vec2(1.0 - ((position.x + 1.0) * 0.5), 1.0 - ((position.y + 1.0) * 0.5));
-        //         gl_Position = vec4(position, 1.0);
-        //     }
-        // `;
 
         shader.fragmentShader = `
             uniform sampler2D uBufferSampler;
@@ -78,7 +88,8 @@ const makePinMesh = () => {
             }
         `;
 
-        // shader.uniforms['uBufferSampler'] = new Uniform(bufferTexture);
+        shader.uniforms['uSizeFactors'] = new Uniform(new Vector2());
+        didLoadUniforms(shader.uniforms);
     };
     const cube = new Mesh( geometry, material );
     
@@ -87,7 +98,7 @@ const makePinMesh = () => {
     cube.renderOrder = 100;
     cube.frustumCulled = false;
     
-    return cube;
+    return { mesh: cube, uniforms: uniformsPromise };
     ///////////////////////////////
 
     // const material = new MeshBasicMaterial({ color: 0xff00ff });

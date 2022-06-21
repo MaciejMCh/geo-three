@@ -182,6 +182,7 @@ export class MapView extends Mesh
 
 			setTimeout(() => {
 				const pin = Pin.make(this.renderEnviroment);
+				pin.updateSize({ x: 50, y: 50, ref: 'pixel' });
 
 				// const dim = 10;
 				// const geometry = new BoxGeometry(dim, dim, dim);
