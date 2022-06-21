@@ -11,6 +11,8 @@ export class Pin {
 
     private position?: GeographicToProjectedConversion;
 
+    private isCircle = false;
+
     constructor(private mesh: Mesh) {}
 
     static make = (renderEnviroment: RenderEnviroment) => {
@@ -32,6 +34,7 @@ export class Pin {
         if (this.position) {
             this.updatePosition(this.position);
         }
+        this.updateIsCircle(this.isCircle);
     };
 
     displayImage = (url: string) => {
@@ -39,8 +42,8 @@ export class Pin {
     };
 
     displayOval = (color: string) => {
-        console.log('color', color);
         (this.mesh.material as MeshBasicMaterial).color = new Color(color);
+        this.updateIsCircle(true);
     };
 
     updatePosition = (position: GeographicToProjectedConversion) => {
@@ -64,6 +67,16 @@ export class Pin {
         this.uniforms['uSizeFactors'].value = this.sizeFactors(size);
     };
 
+    updateIsCircle = (isCircle: boolean) => {
+        this.isCircle = isCircle;
+
+        if (!this.uniforms) {
+            return;
+        }
+
+        this.uniforms['uIsCircle'].value = isCircle;
+    };
+
     sizeFactors = (size: PixelSpacePoint) => new Vector2(
         size.x / window.innerWidth,
         size.y / window.innerHeight,
@@ -85,6 +98,7 @@ const makePinMesh = () => {
 			lines.splice(0, 0, [
 				'uniform vec2 uSizeFactors;',
                 'uniform vec3 uWorldPosition;',
+                'varying vec2 vTexel;',
 			].join('\n'));
 			lines.splice(lines.length - 1, 0, `
                 vec4 framePosition = projectionMatrix * viewMatrix * vec4(uWorldPosition, 1.0);
@@ -95,20 +109,30 @@ const makePinMesh = () => {
                     0.0,
                     1.0
                 );
+                vTexel = uv;
 			`);
 		});
 
         shader.fragmentShader = editLines(shader.fragmentShader, lines => {
             lines.splice(0, 0, [
-				
+				'varying vec2 vTexel;',
+                'uniform bool uIsCircle;',
 			].join('\n'));
 			lines.splice(lines.length - 1, 0, `
-                
+                if (uIsCircle) {
+                    float radius = distance(vTexel, vec2(0.5, 0.5));
+                    if (radius > 0.5) {
+                        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+                    } else if (radius > 0.45) {
+                        gl_FragColor = vec4(0.953, 0.573, 0.0, 1.0);
+                    }
+                }
 			`);
         });
 
         shader.uniforms['uSizeFactors'] = new Uniform(new Vector2());
         shader.uniforms['uWorldPosition'] = new Uniform(new Vector3());
+        shader.uniforms['uIsCircle'] = new Uniform(false);
         didLoadUniforms(shader.uniforms);
     };
     const mesh = new Mesh( geometry, material );
